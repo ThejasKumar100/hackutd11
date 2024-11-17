@@ -10,4 +10,19 @@ declare global {
 	}
 }
 
+/// <reference types="@sveltejs/kit" />
+
+declare module '$env/static/private' {
+    export const MONGO_CLUSTER_CONNECTION_STRING: string;
+    export const GMAIL_USER: string;
+    export const GMAIL_APP_PASSWORD: string;
+    export const SAMBANOVA_API_KEY: string;
+}
+
+declare namespace App {
+    interface Locals {}
+    interface PageData {}
+    interface Platform {}
+}
+
 export {};

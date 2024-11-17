@@ -2,16 +2,9 @@ import { writable, get, type Writable } from 'svelte/store';
 import { Auth0Client, type User } from '@auth0/auth0-spa-js';
 import { browser } from '$app/environment';
 import { authConfig } from './auth-config';
+import { UserRole, type ExtendedUser } from '../types/user';
 
-// defines the user role types
-type UserRole = 'admin' | 'user';
-
-// defines the extendeduser types
-interface ExtendedUser extends User {
-    role?: UserRole;
-}
-
-// defines store types
+// Define store types
 type AuthStore = Writable<Auth0Client | null>;
 type UserStore = Writable<ExtendedUser | null>;
 type ErrorStore = Writable<Error | null>;
@@ -20,29 +13,17 @@ const ADMIN_EMAILS = ['nabil931260@gmail.com']; // admin emails here
 
 const createAuthStore = (): AuthStore => {
     const { subscribe, set, update } = writable<Auth0Client | null>(null);
-    return {
-        subscribe,
-        set,
-        update
-    };
+    return { subscribe, set, update };
 };
 
 const createUserStore = (): UserStore => {
     const { subscribe, set, update } = writable<ExtendedUser | null>(null);
-    return {
-        subscribe,
-        set,
-        update
-    };
+    return { subscribe, set, update };
 };
 
 const createErrorStore = (): ErrorStore => {
     const { subscribe, set, update } = writable<Error | null>(null);
-    return {
-        subscribe,
-        set,
-        update
-    };
+    return { subscribe, set, update };
 };
 
 export const auth0Client = createAuthStore();
@@ -52,7 +33,10 @@ export const user = createUserStore();
 export const error = createErrorStore();
 
 export async function initializeAuth(): Promise<void> {
-    if (!browser) return;
+    if (!browser) {
+        isLoading.set(false);
+        return;
+    }
 
     try {
         const client = new Auth0Client(authConfig);
@@ -72,12 +56,13 @@ export async function initializeAuth(): Promise<void> {
                 const isAdmin = ADMIN_EMAILS.includes(userProfile.email || '');
                 const userWithRole: ExtendedUser = {
                     ...userProfile,
-                    role: isAdmin ? 'admin' : 'user'
+                    role: isAdmin ? UserRole.ADMIN : UserRole.USER
                 };
                 user.set(userWithRole);
             }
         }
     } catch (e) {
+        console.error('Auth error:', e);
         error.set(e instanceof Error ? e : new Error(String(e)));
     } finally {
         isLoading.set(false);

@@ -13,8 +13,8 @@
     {#if $user}
         <div class="user-info">
             <p>Welcome, Admin {$user.name}</p>
-            <p>Email: {$user.email}</p>
-            <p>Role: {$user.role}</p>
+            <!-- <p>Email: {$user.email}</p>
+            <p>Role: {$user.role}</p> -->
         </div>
         <button on:click={handleLogout}>Logout</button>
     {/if}
@@ -27,7 +27,7 @@
     .user-info {
         margin: 1rem 0;
         padding: 1rem;
-        background: #f5f5f5;
+        background: #000000;
         border-radius: 4px;
     }
 </style>
