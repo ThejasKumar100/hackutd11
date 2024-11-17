@@ -6,7 +6,6 @@
 
 	$: {
 		if ($user) {
-			console.log('yo yoyoyoyo', $user);
 			userId = $user.sub; // Get user_id (sub field) from the user profile
 		}
 	}
