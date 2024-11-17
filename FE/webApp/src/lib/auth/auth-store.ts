@@ -1,5 +1,6 @@
 import { writable, get, type Writable } from 'svelte/store';
 import { Auth0Client, type User, type LogoutOptions } from '@auth0/auth0-spa-js';
+import { browser } from '$app/environment';
 import { authConfig } from './auth-config';
 
 // Define types
@@ -42,11 +43,13 @@ export const user = createUserStore();
 export const error = createErrorStore();
 
 export async function initializeAuth(): Promise<void> {
+    if (!browser) return;
+
     try {
         const client = new Auth0Client(authConfig);
         auth0Client.set(client);
 
-        // Checks if the user was redirected after they login
+        // Check if user was redirected after login
         if (window.location.search.includes("code=")) {
             await client.handleRedirectCallback();
             window.history.replaceState({}, document.title, window.location.pathname);
@@ -73,6 +76,8 @@ export async function initializeAuth(): Promise<void> {
 }
 
 export async function login(): Promise<void> {
+    if (!browser) return;
+
     try {
         const currentClient = get(auth0Client);
         if (!currentClient) {
@@ -89,6 +94,8 @@ export async function login(): Promise<void> {
 }
 
 export async function logout(): Promise<void> {
+    if (!browser) return;
+
     try {
         const currentClient = get(auth0Client);
         if (!currentClient) {

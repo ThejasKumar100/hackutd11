@@ -2,8 +2,6 @@
     import { isAuthenticated, isLoading } from '$lib/auth/auth-store';
     import { goto } from '$app/navigation';
 
-    export let role: string | null = null;
-
     $: if (!$isLoading && !$isAuthenticated) {
         goto('/');
     }
