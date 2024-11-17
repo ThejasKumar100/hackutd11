@@ -134,13 +134,7 @@ async def upload_images(
         }
 
         print("Saving to database...")
-        print("extracted text:", response_data["images"][0]["extracted_text"][:100])
-        print("reason:", response_data["images"][0]["reason"][:100])
-        print("extracted text:", response_data["images"][1]["extracted_text"][:100])
-        print("reason:", response_data["images"][1]["reason"][:100])
-        print("extracted text:", response_data["images"][2]["extracted_text"][:100])
-        print("reason:", response_data["images"][2]["reason"][:100])
-        # save_to_database(response_data)
+        save_to_database(response_data)
 
         if valid_images:
             # If at least one valid image, we confirm submission was successful
@@ -179,7 +173,7 @@ async def process_files(files: List[UploadFile]) -> List[dict]:
                 processed_results.append({
                     "filename": file.filename,
                     "extracted_text": extracted_text,
-                    "image_data": encoded_image,
+                    "data": encoded_image,
                     "is_valid": None,
                     "reason": "temp reason"
                 })
@@ -194,7 +188,7 @@ async def process_files(files: List[UploadFile]) -> List[dict]:
                 processed_results.append({
                     "filename": file.filename,
                     "extracted_text": extracted_text,
-                    "image_data": pdf_base64,  # stored a bit differently
+                    "data": pdf_base64,  # stored a bit differently
                     "is_valid": None,
                     "reason": "temp reason"
                 })
@@ -206,10 +200,10 @@ async def process_files(files: List[UploadFile]) -> List[dict]:
             print(f"Error processing file {file.filename}: {e}")
             processed_results.append({
                 "filename": file.filename,
+                "extracted_text": None,
+                "data": None,
                 "is_valid": False,
                 "reason": f"Error: {str(e)}",
-                "extracted_text": None,
-                "image_data": None
             })
 
     return processed_results
@@ -362,7 +356,7 @@ def calculate_proposed_credit(validated_images: List[dict]) -> dict:
     Calculate the proposed credit score and credit limit using only valid entries.
     Returns a dictionary with 'proposed_score' and 'proposed_limit'.
     """
-    valid_entries = [image["data"] for image in validated_images if image["is_valid"]]
+    valid_entries = [image["extracted_text"] for image in validated_images if image["is_valid"]]
 
     if not valid_entries:
         return {
