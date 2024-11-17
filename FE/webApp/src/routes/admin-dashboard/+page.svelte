@@ -35,7 +35,7 @@
 
         <div class="dashboard-grid">
             <div class="left-panel">
-                <section class="account-info panel">
+                <!-- <section class="account-info panel">
                     <h2>Account Information</h2>
                     <div class="info-grid">
                         <div class="info-item">
@@ -51,7 +51,7 @@
                             <span class="value">{new Date().toLocaleDateString()}</span>
                         </div>
                     </div>
-                </section>
+                </section> -->
 
 
                 <section class="applications panel">
@@ -72,7 +72,20 @@
                             {/each}
                          {:else}
                          {/if} -->
-                        <p class="no-applications">No pending applications</p>
+
+                        <!-- <p class="no-applications">No pending applications</p> -->
+
+
+                        <div class="card">
+                            <div class="card2">
+
+                                <div class="tileName"> <!-- First and Last name of the applicant -->
+                                    First Last
+                                </div>
+
+                            </div>
+                        </div>
+
                     </div>
                 </section>
             </div>
@@ -124,7 +137,16 @@
         border-radius: 4px;
     } */
 
-    
+    .tileName {
+        position: relative;
+        top: 15px;
+        left: 15px;
+        font-size: 20px;
+        font-family: "Playfair Display", serif;
+        color: white;
+        font-weight: 600;
+    }
+
     .dashboard-container {
         padding-top: 5rem;
         min-height: 100vh;
@@ -251,4 +273,32 @@
             grid-template-columns: 1fr;
         }
     }
+
+    /* ---------------------- Application Tiles */
+    .card {
+        width: 190px;
+        height: 254px;
+        background-image: linear-gradient(163deg, #00ff75 0%, #3700ff 100%);
+        border-radius: 20px;
+        transition: all .3s;
+    }
+
+    .card2 {
+        width: 190px;
+        height: 254px;
+        background-color: #1a1a1a;
+        border-radius: 15px;
+        transition: all .2s;
+    }
+
+    .card2:hover {
+        transform: scale(0.98);
+        border-radius: 20px;
+    }
+
+    .card:hover {
+        box-shadow: 0px 0px 30px 1px rgba(0, 255, 117, 0.30);
+    }
+
+
 </style>
