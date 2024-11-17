@@ -1,98 +1,98 @@
 <script lang="ts">
-	import Header from '../user-dashboard/Header.svelte';
-	import { goto } from '$app/navigation';
-	import { user } from '$lib/auth/auth-store';
-	let userId: string | undefined = undefined;
+    import Header from '../user-dashboard/Header.svelte';
+    import { goto } from '$app/navigation';
+    import { user } from '$lib/auth/auth-store';
+    let userId: string | undefined = undefined;
 
-	$: {
-		if ($user) {
-			userId = $user.sub; // Get user_id (sub field) from the user profile
-		}
-	}
-	$: files.proofOfIncome; // Ensure reactivity
+    $: {
+        if ($user) {
+            userId = $user.sub;
+        }
+    }
 
-	interface FileState {
-		idDocument: File | null;
-		proofOfIncome: File[]; // Allow multiple files
-	}
+    interface FileState {
+        idDocument: File | null;
+        proofOfIncome: File[];
+    }
 
-	let files: FileState = {
-		idDocument: null,
-		proofOfIncome: []
-	};
+    let files: FileState = {
+        idDocument: null,
+        proofOfIncome: []
+    };
 
-	let uploading = false;
-	let uploadResponse: { status: string; message: string } | null = null;
+    let uploading = false;
+    let uploadResponse: { status: string; message: string } | null = null;
 
-	function handleFileChange(event: Event, documentType: keyof FileState): void {
-		const input = event.target as HTMLInputElement;
-		if (input.files) {
-			console.log('Files selected:', input.files);
-			if (documentType === 'proofOfIncome') {
-				files.proofOfIncome = [...files.proofOfIncome, ...Array.from(input.files)];
-				console.log('Updated proofOfIncome array:', files.proofOfIncome);
-			} else {
-				files[documentType] = input.files[0];
-			}
-		}
-	}
+    function handleFileChange(event: Event, documentType: keyof FileState): void {
+        const input = event.target as HTMLInputElement;
+        if (input.files) {
+            console.log('Files selected:', input.files);
+            if (documentType === 'proofOfIncome') {
+                files.proofOfIncome = [...files.proofOfIncome, ...Array.from(input.files)];
+                console.log('Updated proofOfIncome array:', files.proofOfIncome);
+            } else {
+                files[documentType] = input.files[0];
+            }
+        }
+    }
 
-	const handleSubmit = async () => {
-		const formData = new FormData();
-		uploading = true;
-		uploadResponse = null;
+    const handleSubmit = async () => {
+        const formData = new FormData();
+        uploading = true;
+        uploadResponse = null;
 
-		// Append user_id
-		formData.append('user_id', userId);
+        // Only append user_id if it exists
+        if (userId) {
+            formData.append('user_id', userId);
+        }
 
-		// Append the idDocument (if exists)
-		if (files.idDocument) {
-			formData.append('files', files.idDocument); // Add as a single file under "files"
-		}
+        // Append the idDocument (if exists)
+        if (files.idDocument) {
+            formData.append('files', files.idDocument);
+        }
 
-		// Append all files in proofOfIncome
-		files.proofOfIncome.forEach((file) => {
-			formData.append('files', file); // Add each file to the "files" field
-		});
+        // Append all files in proofOfIncome
+        files.proofOfIncome.forEach((file) => {
+            formData.append('files', file);
+        });
 
-		// Send the request to the server
-		try {
-			const response = await fetch('http://localhost:8000/upload-images/', {
-				method: 'POST',
-				body: formData
-			});
+        try {
+            const response = await fetch('http://localhost:8000/upload-images/', {
+                method: 'POST',
+                body: formData
+            });
 
-			if (!response.ok) {
-				uploadResponse = {
-					status: 'error',
-					message: `Error uploading files: ${await response.text()}`
-				};
-			} else {
-				const responseData = await response.json();
-				console.log('Response data:', responseData);
-				uploadResponse = {
-					status: 'success',
-					message: 'Files uploaded successfully!'
-				};
-				// Clear the files after successful upload
-				files = { idDocument: null, proofOfIncome: [] };
-			}
-		} catch (error) {
-			uploadResponse = {
-				status: 'error',
-				message: `Error sending request: ${error.message}`
-			};
-		} finally {
-			uploading = false;
-		}
-	};
+            if (!response.ok) {
+                uploadResponse = {
+                    status: 'error',
+                    message: `Error uploading files: ${await response.text()}`
+                };
+            } else {
+                const responseData = await response.json();
+                console.log('Response data:', responseData);
+                uploadResponse = {
+                    status: 'success',
+                    message: 'Files uploaded successfully!'
+                };
+                // Clear the files after successful upload
+                files = { idDocument: null, proofOfIncome: [] };
+            }
+        } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+            uploadResponse = {
+                status: 'error',
+                message: `Error sending request: ${errorMessage}`
+            };
+        } finally {
+            uploading = false;
+        }
+    };
 
-	function handleCancel(): void {
-		goto('/user-dashboard');
-	}
+    function handleCancel(): void {
+        goto('/user-dashboard');
+    }
 </script>
 
-<Header />
 
 <div class="application-container">
 	<div class="application-content">

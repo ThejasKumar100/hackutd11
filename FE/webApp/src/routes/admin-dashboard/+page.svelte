@@ -1,36 +1,40 @@
 <script lang="ts">
     import Header from './Header.svelte';
-    import { user, logout } from '$lib/auth/auth-store';
+    import { user } from '$lib/auth/auth-store';
     import { goto } from '$app/navigation';
+    import { onMount } from 'svelte';
 
-    async function handleLogout() {
-        await logout();
-        goto('/');
+    let applications = [
+        {
+            id: '1001',
+            type: 'Credit Card',
+            status: 'pending',
+            submittedDate: new Date().toLocaleDateString()
+        },
+        {
+            id: '1002',
+            type: 'Credit Card',
+            status: 'approved',
+            submittedDate: new Date().toLocaleDateString()
+        },
+    ];
+
+    function applyForCreditCard() {
+        goto('/credit-card-applications');
+    }
+
+    function goToAccountDetails() {
+        goto('/account-details');
     }
 </script>
 
-<!-- <div class="admin-dashboard">
-    <h1>Admin Dashboard</h1>
-    {#if $user}
-        <div class="user-info">
-            <p>Welcome, Admin {$user.name}</p> -->
-            <!-- <p>Email: {$user.email}</p>
-            <p>Role: {$user.role}</p> -->
-        <!-- </div>
-        <button on:click={handleLogout}>Logout</button>
-    {/if}
-</div> -->
-
-
 <Header />
-<!-- <Header title="User Dashboard" /> -->
-
 
 <div class="dashboard-container">
     <div class="dashboard-content">
         <div class="welcome-section">
             <h1>Welcome, {$user?.name || 'User'}</h1>
-            <p class="subtitle">Manage incoming applications</p>
+            <p class="subtitle">Manage your account and applications</p>
         </div>
 
         <div class="dashboard-grid">
@@ -53,26 +57,43 @@
                     </div>
                 </section>
 
+                <section class="services panel">
+                    <h2>Services</h2>
+                    <button class="apply-button" on:click={applyForCreditCard}>
+                        <svg viewBox="0 0 24 24" width="24" height="24">
+                            <path fill="currentColor" d="M20 4H4c-1.11 0-1.99.89-1.99 2L2 18c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 14H4v-6h16v6zm0-10H4V6h16v2z"/>
+                        </svg>
+                        Apply for a Credit Card
+                    </button>
+                </section>
 
                 <section class="applications panel">
                     <h2>Pending Applications</h2>
                     <div class="applications-list">
-                        <!-- database -->
-                         <!-- {#if $app}
-                            {#each $app as application}
-                                <div class="application-item">
-                                    <span class="label">Application ID</span>
-                                    <span class="value">{application.id}</span>
-                                    <span class="label">Applicant</span>
-                                    <span class="value">{application.applicant}</span>
-                                    <span class="label">Date</span>
-                                    <span class="value">{application.date}</span>
-                                    <button class="action-button">View Application</button>
+                        {#if applications.length === 0}
+                            <p class="no-applications">No pending applications</p>
+                        {:else}
+                            <div class="applications-scroll">
+                                <div class="application-cards">
+                                    {#each applications as application}
+                                        <div class="application-card">
+                                            <div class="application-header">
+                                                <span class="application-type">{application.type}</span>
+                                                <span class="application-status {application.status}">
+                                                    {application.status}
+                                                </span>
+                                            </div>
+                                            <div class="application-details">
+                                                <p class="application-date">
+                                                    Submitted: {application.submittedDate}
+                                                </p>
+                                                <p class="application-id">ID: #{application.id}</p>
+                                            </div>
+                                        </div>
+                                    {/each}
                                 </div>
-                            {/each}
-                         {:else}
-                         {/if} -->
-                        <p class="no-applications">No pending applications</p>
+                            </div>
+                        {/if}
                     </div>
                 </section>
             </div>
@@ -81,7 +102,7 @@
                 <section class="quick-actions panel">
                     <h2>Quick Actions</h2>
                     <div class="actions-grid">
-                        <button class="action-button">
+                        <button class="action-button" on:click={goToAccountDetails}>
                             <svg viewBox="0 0 24 24" width="24" height="24">
                                 <path fill="currentColor" d="M11 17h2v-6h-2v6zm1-15C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zM11 9h2V7h-2v2z"/>
                             </svg>
@@ -97,7 +118,7 @@
                             <svg viewBox="0 0 24 24" width="24" height="24">
                                 <path fill="currentColor" d="M19 3h-4.18C14.4 1.84 13.3 1 12 1c-1.3 0-2.4.84-2.82 2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 0c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm2 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/>
                             </svg>
-                            Documents
+                            Review Applications
                         </button>
                         <button class="action-button">
                             <svg viewBox="0 0 24 24" width="24" height="24">
@@ -193,10 +214,10 @@
         color: #10B981;
     }
 
-    /* .apply-button {
+    .apply-button {
         width: 100%;
         padding: 1rem;
-        background-color: #2563EB;
+        background-color: rgb(37, 99, 235);  
         color: white;
         border: none;
         border-radius: 6px;
@@ -206,11 +227,17 @@
         gap: 0.5rem;
         cursor: pointer;
         transition: background-color 0.2s;
-    } */
+        font-size: 1rem;
+        font-weight: 500;
+    }
 
-    /* .apply-button:hover {
-        background-color: #1D4ED8;
-    } */
+    .apply-button:hover {
+        background-color: rgb(29, 78, 216);
+    }
+
+    .services {
+        margin-bottom: 1.5rem;
+    }
 
     .no-applications {
         color: rgb(161 161 170);
@@ -251,4 +278,87 @@
             grid-template-columns: 1fr;
         }
     }
+
+
+    .applications-scroll {
+        overflow-x: auto;
+        padding: 0.5rem 0;
+        margin: 0 -0.5rem;
+    }
+
+    .application-cards {
+        display: flex;
+        gap: 1rem;
+        padding: 0 0.5rem;
+        min-width: min-content;
+    }
+
+    .application-card {
+        background-color: rgb(51 51 55);
+        border-radius: 6px;
+        padding: 1rem;
+        min-width: 250px;
+        border: 1px solid rgb(63 63 70);
+    }
+
+    .application-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.75rem;
+    }
+
+    .application-type {
+        color: white;
+        font-weight: 500;
+    }
+
+    .application-status {
+        padding: 0.25rem 0.5rem;
+        border-radius: 9999px;
+        font-size: 0.75rem;
+        font-weight: 500;
+    }
+
+    .application-status.pending {
+        background-color: rgb(234 179 8 / 0.1);
+        color: rgb(234 179 8);
+    }
+
+    .application-status.approved {
+        background-color: rgb(34 197 94 / 0.1);
+        color: rgb(34 197 94);
+    }
+
+    .application-details {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .application-date,
+    .application-id {
+        color: rgb(161 161 170);
+        font-size: 0.875rem;
+    }
+
+    /* Custom scrollbar styling */
+    .applications-scroll::-webkit-scrollbar {
+        height: 6px;
+    }
+
+    .applications-scroll::-webkit-scrollbar-track {
+        background: rgb(39 39 42);
+        border-radius: 3px;
+    }
+
+    .applications-scroll::-webkit-scrollbar-thumb {
+        background: rgb(63 63 70);
+        border-radius: 3px;
+    }
+
+    .applications-scroll::-webkit-scrollbar-thumb:hover {
+        background: rgb(82 82 91);
+    }
+
 </style>

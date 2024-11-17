@@ -3,18 +3,31 @@
     import { user } from '$lib/auth/auth-store';
     import { goto } from '$app/navigation';
 
+    // Sample applications data
+    let applications = [
+        {
+            id: '1001',
+            type: 'Credit Card',
+            status: 'pending',
+            submittedDate: new Date().toLocaleDateString()
+        },
+        {
+            id: '1002',
+            type: 'Credit Card',
+            status: 'approved',
+            submittedDate: new Date().toLocaleDateString()
+        }
+    ];
+
     function applyForCreditCard() {
         goto('/credit-card-applications');
     }
-
 
     function goToAccountDetails() {
         goto('/account-details');
     }
 </script>
 
-
-<Header title="User Dashboard" />
 
 <div class="dashboard-container">
     <div class="dashboard-content">
@@ -56,8 +69,36 @@
                 <section class="applications panel">
                     <h2>Pending Applications</h2>
                     <div class="applications-list">
-                        <!-- database -->
-                        <p class="no-applications">No pending applications</p>
+                        {#if applications.length === 0}
+                            <p class="no-applications">No pending applications</p>
+                        {:else}
+                            <div class="applications-scroll">
+                                <div class="application-cards">
+                                    {#each applications as application}
+                                        <div class="application-card">
+                                            <div class="application-header">
+                                                <div class="header-content">
+                                                    <span class="application-type">{application.type}</span>
+                                                    <span class="application-status {application.status}">
+                                                        {application.status}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            <div class="application-details">
+                                                <div class="detail-row">
+                                                    <span class="detail-label">Application ID</span>
+                                                    <span class="detail-value">#{application.id}</span>
+                                                </div>
+                                                <div class="detail-row">
+                                                    <span class="detail-label">Submitted</span>
+                                                    <span class="detail-value">{application.submittedDate}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    {/each}
+                                </div>
+                            </div>
+                        {/if}
                     </div>
                 </section>
             </div>
@@ -72,7 +113,7 @@
                             </svg>
                             Account Details
                         </button>
-                        <button class="action-button"> 
+                        <button class="action-button">
                             <svg viewBox="0 0 24 24" width="24" height="24">
                                 <path fill="currentColor" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1.41 16.09V20h-2.67v-1.93c-1.71-.36-3.16-1.46-3.27-3.4h1.96c.1 1.05.82 1.87 2.65 1.87 1.96 0 2.4-.98 2.4-1.59 0-.83-.44-1.61-2.67-2.14-2.48-.6-4.18-1.62-4.18-3.67 0-1.72 1.39-2.84 3.11-3.21V4h2.67v1.95c1.86.45 2.79 1.86 2.85 3.39H14.3c-.05-1.11-.64-1.87-2.22-1.87-1.5 0-2.4.68-2.4 1.64 0 .84.65 1.39 2.67 1.91s4.18 1.39 4.18 3.91c-.01 1.83-1.38 2.83-3.12 3.16z"/>
                             </svg>
@@ -169,7 +210,7 @@
     .apply-button {
         width: 100%;
         padding: 1rem;
-        background-color: #2563EB;
+        background-color: rgb(37, 99, 235);
         color: white;
         border: none;
         border-radius: 6px;
@@ -179,16 +220,89 @@
         gap: 0.5rem;
         cursor: pointer;
         transition: background-color 0.2s;
+        font-size: 1rem;
+        font-weight: 500;
     }
 
     .apply-button:hover {
-        background-color: #1D4ED8;
+        background-color: rgb(29, 78, 216);
     }
 
-    .no-applications {
+    .applications-scroll {
+        overflow-x: auto;
+        margin: 0 -1rem;
+        padding: 0.5rem 1rem;
+    }
+
+    .application-cards {
+        display: flex;
+        gap: 1rem;
+    }
+
+    .application-card {
+        background-color: rgb(45 45 48);
+        border-radius: 8px;
+        padding: 1.25rem;
+        min-width: 300px;
+        border: 1px solid rgb(63 63 70);
+    }
+
+    .application-header {
+        margin-bottom: 1.25rem;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid rgb(63 63 70);
+    }
+
+    .header-content {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .application-type {
+        color: white;
+        font-weight: 500;
+        font-size: 1rem;
+    }
+
+    .application-status {
+        padding: 0.25rem 0.75rem;
+        border-radius: 9999px;
+        font-size: 0.75rem;
+        font-weight: 500;
+        text-transform: capitalize;
+    }
+
+    .application-status.pending {
+        background-color: rgb(234 179 8 / 0.1);
+        color: rgb(234 179 8);
+    }
+
+    .application-status.approved {
+        background-color: rgb(34 197 94 / 0.1);
+        color: rgb(34 197 94);
+    }
+
+    .detail-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.5rem;
+    }
+
+    .detail-row:last-child {
+        margin-bottom: 0;
+    }
+
+    .detail-label {
         color: rgb(161 161 170);
-        text-align: center;
-        padding: 1rem;
+        font-size: 0.875rem;
+    }
+
+    .detail-value {
+        color: white;
+        font-size: 0.875rem;
+        font-weight: 500;
     }
 
     .actions-grid {
@@ -213,6 +327,24 @@
 
     .action-button:hover {
         background-color: rgb(82 82 91);
+    }
+
+    .applications-scroll::-webkit-scrollbar {
+        height: 6px;
+    }
+
+    .applications-scroll::-webkit-scrollbar-track {
+        background: rgb(39 39 42);
+        border-radius: 3px;
+    }
+
+    .applications-scroll::-webkit-scrollbar-thumb {
+        background: rgb(63 63 70);
+        border-radius: 3px;
+    }
+
+    .applications-scroll::-webkit-scrollbar-thumb:hover {
+        background: rgb(82 82 91);
     }
 
     @media (max-width: 768px) {

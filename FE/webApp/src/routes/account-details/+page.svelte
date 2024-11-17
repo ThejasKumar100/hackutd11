@@ -12,7 +12,6 @@
 
     function handleSave(event: Event) {
         event.preventDefault();
-        // Here you would typically save the data to your backend
         console.log('Saving user info:', userInfo);
         goto('/user-dashboard');
     }
@@ -22,8 +21,6 @@
     }
 </script>
 
-<Header />
-
 <div class="account-container">
     <div class="account-content">
         <div class="account-header">
@@ -32,46 +29,48 @@
         </div>
 
         <form class="account-form" on:submit|preventDefault={handleSave}>
-            <div class="form-panel">
-                <div class="form-group">
-                    <label for="name">Full Name</label>
-                    <input 
-                        type="text" 
-                        id="name" 
-                        bind:value={userInfo.name}
-                        readonly
-                    >
-                </div>
+            <div class="form-group">
+                <label for="name">Full Name</label>
+                <input 
+                    type="text" 
+                    id="name" 
+                    bind:value={userInfo.name}
+                    readonly
+                    class="input-dark"
+                >
+            </div>
 
-                <div class="form-group">
-                    <label for="email">Email Address</label>
-                    <input 
-                        type="email" 
-                        id="email" 
-                        bind:value={userInfo.email}
-                        readonly
-                    >
-                </div>
+            <div class="form-group">
+                <label for="email">Email Address</label>
+                <input 
+                    type="email" 
+                    id="email" 
+                    bind:value={userInfo.email}
+                    readonly
+                    class="input-dark"
+                >
+            </div>
 
-                <div class="form-group">
-                    <label for="phone">Phone Number</label>
-                    <input 
-                        type="tel" 
-                        id="phone" 
-                        bind:value={userInfo.phone}
-                        required
-                    >
-                </div>
+            <div class="form-group">
+                <label for="phone">Phone Number</label>
+                <input 
+                    type="tel" 
+                    id="phone" 
+                    bind:value={userInfo.phone}
+                    placeholder="Enter your phone number"
+                    class="input-dark"
+                >
+            </div>
 
-                <div class="form-group">
-                    <label for="address">Address</label>
-                    <input 
-                        type="text" 
-                        id="address" 
-                        bind:value={userInfo.address}
-                        required
-                    >
-                </div>
+            <div class="form-group">
+                <label for="address">Address</label>
+                <input 
+                    type="text" 
+                    id="address" 
+                    bind:value={userInfo.address}
+                    placeholder="Enter your address"
+                    class="input-dark"
+                >
             </div>
 
             <div class="button-group">
@@ -86,93 +85,92 @@
     </div>
 </div>
 
-
-
 <style>
     .account-container {
-        padding-top: 5rem;
         min-height: 100vh;
         background-color: rgb(24 24 27);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 2rem;
     }
 
     .account-content {
-        max-width: 600px;
-        margin: 0 auto;
+        width: 100%;
+        max-width: 480px;
+        background-color: rgb(32 32 35);
+        border-radius: 12px;
         padding: 2rem;
     }
 
     .account-header {
-        margin-bottom: 3rem;
         text-align: center;
+        margin-bottom: 2rem;
     }
 
     h1 {
         color: white;
-        font-size: 2.5rem;
-        margin-bottom: 0.75rem;
+        font-size: 2rem;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
     }
 
     .subtitle {
         color: rgb(161 161 170);
-        font-size: 1.1rem;
-    }
-
-    .form-panel {
-        background-color: rgb(39 39 42);
-        border-radius: 12px;
-        padding: 2rem;
-        margin-bottom: 2rem;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        font-size: 0.875rem;
     }
 
     .form-group {
-        margin-bottom: 1.5rem;
+        margin-bottom: 1.25rem;
     }
 
     label {
         display: block;
-        color: white;
+        color: rgb(161 161 170);
+        font-size: 0.875rem;
         margin-bottom: 0.5rem;
-        font-size: 1rem;
-        font-weight: 500;
     }
 
-    input {
+    .input-dark {
         width: 100%;
         padding: 0.75rem;
-        border-radius: 6px;
+        background-color: rgb(24 24 27);
         border: 1px solid rgb(63 63 70);
-        background-color: rgb(51 51 55);
+        border-radius: 6px;
         color: white;
-        font-size: 1rem;
-        transition: border-color 0.2s, box-shadow 0.2s;
+        font-size: 0.875rem;
+        transition: border-color 0.2s;
     }
 
-    input[readonly] {
+    .input-dark:focus {
+        outline: none;
+        border-color: rgb(37 99 235);
+    }
+
+    .input-dark[readonly] {
         background-color: rgb(45 45 48);
         cursor: not-allowed;
     }
-    
-    input:focus {
-        outline: none;
-        border-color: #3b82f6;
-        box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
+
+    .input-dark::placeholder {
+        color: rgb(161 161 170);
     }
 
     .button-group {
         display: flex;
         justify-content: flex-end;
-        gap: 1rem;
+        gap: 0.75rem;
+        margin-top: 2rem;
     }
 
     .cancel-button, .save-button {
         padding: 0.75rem 1.5rem;
         border: none;
         border-radius: 6px;
-        font-weight: 600;
-        font-size: 1rem;
+        font-size: 0.875rem;
+        font-weight: 500;
         cursor: pointer;
-        transition: background-color 0.2s, transform 0.1s;
+        transition: background-color 0.2s;
     }
 
     .cancel-button {
@@ -182,33 +180,23 @@
 
     .cancel-button:hover {
         background-color: rgb(82 82 91);
-        transform: translateY(-2px);
     }
 
     .save-button {
-        background-color: #2563EB;
+        background-color: rgb(37 99 235);
         color: white;
     }
 
     .save-button:hover {
-        background-color: #1D4ED8;
-        transform: translateY(-2px);
+        background-color: rgb(29 78 216);
     }
 
     @media (max-width: 640px) {
+        .account-container {
+            padding: 1rem;
+        }
+
         .account-content {
-            padding: 1.5rem;
-        }
-
-        h1 {
-            font-size: 2rem;
-        }
-
-        .subtitle {
-            font-size: 1rem;
-        }
-
-        .form-panel {
             padding: 1.5rem;
         }
 
