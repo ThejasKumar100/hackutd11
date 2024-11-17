@@ -7,9 +7,9 @@ export const load: PageLoad = async () => {
     const currentUser = get(user);
     const isAuth = get(isAuthenticated);
 
-    // if (!isAuth) {
-    //     throw redirect(307, '/login');
-    // }
+    if (!isAuth) {
+        throw redirect(307, '/login');
+    }
 
     return {
         user: currentUser

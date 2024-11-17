@@ -56,6 +56,20 @@
                     <h2>Pending Applications</h2>
                     <div class="applications-list">
                         <!-- database -->
+                         <!-- {#if $app}
+                            {#each $app as application}
+                                <div class="application-item">
+                                    <span class="label">Application ID</span>
+                                    <span class="value">{application.id}</span>
+                                    <span class="label">Applicant</span>
+                                    <span class="value">{application.applicant}</span>
+                                    <span class="label">Date</span>
+                                    <span class="value">{application.date}</span>
+                                    <button class="action-button">View Application</button>
+                                </div>
+                            {/each}
+                         {:else}
+                         {/if} -->
                         <p class="no-applications">No pending applications</p>
                     </div>
                 </section>
@@ -98,7 +112,7 @@
 
 
 <style>
-    .admin-dashboard {
+    /* .admin-dashboard {
         padding: 2rem;
     }
     .user-info {
@@ -106,7 +120,7 @@
         padding: 1rem;
         background: #000000;
         border-radius: 4px;
-    }
+    } */
 
     
     .dashboard-container {
@@ -177,7 +191,7 @@
         color: #10B981;
     }
 
-    .apply-button {
+    /* .apply-button {
         width: 100%;
         padding: 1rem;
         background-color: #2563EB;
@@ -190,11 +204,11 @@
         gap: 0.5rem;
         cursor: pointer;
         transition: background-color 0.2s;
-    }
+    } */
 
-    .apply-button:hover {
+    /* .apply-button:hover {
         background-color: #1D4ED8;
-    }
+    } */
 
     .no-applications {
         color: rgb(161 161 170);
