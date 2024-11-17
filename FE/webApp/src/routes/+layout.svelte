@@ -11,11 +11,20 @@
         }
     });
 
-    // Add role-based route protection
-    $: if (!$isLoading && $isAuthenticated && $user) {
-        const currentPath = $page.url.pathname;
-        if (currentPath.includes('admin-dashboard') && $user.role !== 'admin') {
-            goto('/user-dashboard');
+	
+    $: if (!$isLoading && browser) {
+        console.log('Auth state changed:', {
+            isAuthenticated: $isAuthenticated,
+            user: $user,
+            currentPath: $page.url.pathname
+        });
+
+        if ($isAuthenticated && $user) {
+            const isPublicRoute = ['/', '/login'].includes($page.url.pathname);
+            if (isPublicRoute) {
+                const redirectPath = $user.role === 'admin' ? '/admin-dashboard' : '/user-dashboard';
+                goto(redirectPath);
+            }
         }
     }
 </script>

@@ -1,16 +1,23 @@
 import { writable, get, type Writable } from 'svelte/store';
-import { Auth0Client, type User, type LogoutOptions } from '@auth0/auth0-spa-js';
+import { Auth0Client, type User } from '@auth0/auth0-spa-js';
 import { browser } from '$app/environment';
 import { authConfig } from './auth-config';
 
-// Define types
+// defines the user role types
+type UserRole = 'admin' | 'user';
+
+// defines the extendeduser types
+interface ExtendedUser extends User {
+    role?: UserRole;
+}
+
+// defines store types
 type AuthStore = Writable<Auth0Client | null>;
-type UserStore = Writable<(User & { role?: UserRole }) | null>;
+type UserStore = Writable<ExtendedUser | null>;
 type ErrorStore = Writable<Error | null>;
-type UserRole = 'admin' | 'user';   // admin & user type;
 
+const ADMIN_EMAILS = ['nabil931260@gmail.com']; // admin emails here
 
-// Initialize stores with proper types
 const createAuthStore = (): AuthStore => {
     const { subscribe, set, update } = writable<Auth0Client | null>(null);
     return {
@@ -21,7 +28,7 @@ const createAuthStore = (): AuthStore => {
 };
 
 const createUserStore = (): UserStore => {
-    const { subscribe, set, update } = writable<User | null>(null);
+    const { subscribe, set, update } = writable<ExtendedUser | null>(null);
     return {
         subscribe,
         set,
@@ -62,40 +69,32 @@ export async function initializeAuth(): Promise<void> {
         if (isAuthenticatedResult) {
             const userProfile = await client.getUser();
             if (userProfile) {
-                // Add role based on email
-                const isAdmin = userProfile.email === 'admin@example.com';
-                user.set({
+                const isAdmin = ADMIN_EMAILS.includes(userProfile.email || '');
+                const userWithRole: ExtendedUser = {
                     ...userProfile,
                     role: isAdmin ? 'admin' : 'user'
-                });
+                };
+                user.set(userWithRole);
             }
         }
     } catch (e) {
-        if (e instanceof Error) {
-            error.set(e);
-        } else {
-            error.set(new Error(String(e)));
-        }
+        error.set(e instanceof Error ? e : new Error(String(e)));
     } finally {
         isLoading.set(false);
     }
 }
 
-export async function login(): Promise<void> {
+export async function handleLogin(): Promise<void> {
     if (!browser) return;
 
     try {
-        const currentClient = get(auth0Client);
-        if (!currentClient) {
+        const client = get(auth0Client);
+        if (!client) {
             throw new Error('Auth0 client not initialized');
         }
-        await currentClient.loginWithRedirect();
+        await client.loginWithRedirect();
     } catch (e) {
-        if (e instanceof Error) {
-            error.set(e);
-        } else {
-            error.set(new Error(String(e)));
-        }
+        error.set(e instanceof Error ? e : new Error(String(e)));
     }
 }
 
@@ -103,24 +102,16 @@ export async function logout(): Promise<void> {
     if (!browser) return;
 
     try {
-        const currentClient = get(auth0Client);
-        if (!currentClient) {
+        const client = get(auth0Client);
+        if (!client) {
             throw new Error('Auth0 client not initialized');
         }
-        await currentClient.logout({
+        await client.logout({
             logoutParams: {
                 returnTo: browser ? window.location.origin : 'http://localhost:5173'
             }
         });
     } catch (e) {
-        if (e instanceof Error) {
-            error.set(e);
-        } else {
-            error.set(new Error(String(e)));
-        }
+        error.set(e instanceof Error ? e : new Error(String(e)));
     }
-}
-
-export function getClient(): Auth0Client | null {
-    return get(auth0Client);
 }
