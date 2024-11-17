@@ -33,7 +33,11 @@
 			pendingApplications = await response.json();
 		} catch (err) {
 			console.error('Error fetching applications:', err);
-			error = err.message;
+			if (err instanceof Error) {
+				error = err.message;
+			} else {
+				error = String(err);
+			}
 		} finally {
 			loading = false;
 			console.log('Pending applications:', pendingApplications);
