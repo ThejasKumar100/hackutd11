@@ -1,6 +1,7 @@
 <script lang="ts">
     import { onMount } from 'svelte';
-    import { initializeAuth, isAuthenticated, isLoading, user } from '$lib/auth/auth-store';
+    // import { initializeAuth, isAuthenticated, isLoading, user } from '$lib/auth/auth-store';
+    import { initializeAuth, isAuthenticated, isLoading, user } from '../lib/auth/auth-store';
     import { goto } from '$app/navigation';
     import { page } from '$app/stores';
     import { browser } from '$app/environment';
