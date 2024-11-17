@@ -24,13 +24,9 @@
 	}
 
 	async function fetchPendingApplications() {
-		const formData = new FormData();
-		formData.append('user_id', userId);
 		try {
-			const response = await fetch(`https://localhost:8000/pending-user-apps/${userId}`, {
-				method: 'GET',
-				body: formData
-			});
+			let url = `http://localhost:8000/pending-user-apps/${userId}`;
+			const response = await fetch(url);
 			if (!response.ok) {
 				throw new Error(`Failed to fetch applications: ${response.statusText}`);
 			}
@@ -44,6 +40,7 @@
 	}
 
 	onMount(() => {
+		console.log('Fetching pending applications...');
 		fetchPendingApplications();
 	});
 </script>
