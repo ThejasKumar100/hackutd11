@@ -1,6 +1,12 @@
 <script lang="ts">
 	import Header from './Header.svelte';
 	import '../app.css';
+	import { onMount } from 'svelte';
+    import { initializeAuth } from '$lib/auth/auth-store';
+
+    onMount(() => {
+        initializeAuth();
+    });
 
 	let { children } = $props();
 </script>
