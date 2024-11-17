@@ -36,6 +36,7 @@
 			error = err.message;
 		} finally {
 			loading = false;
+			console.log('Pending applications:', pendingApplications);
 		}
 	}
 
@@ -269,5 +270,29 @@
 		.actions-grid {
 			grid-template-columns: 1fr;
 		}
+	}
+	.card {
+		width: 190px;
+		height: 254px;
+		background-image: linear-gradient(163deg, #00ff75 0%, #3700ff 100%);
+		border-radius: 20px;
+		transition: all 0.3s;
+	}
+
+	.card2 {
+		width: 190px;
+		height: 254px;
+		background-color: #1a1a1a;
+		border-radius: 15px;
+		transition: all 0.2s;
+	}
+
+	.card2:hover {
+		transform: scale(0.98);
+		border-radius: 20px;
+	}
+
+	.card:hover {
+		box-shadow: 0px 0px 30px 1px rgba(0, 255, 117, 0.3);
 	}
 </style>
