@@ -1,24 +1,17 @@
 <script lang="ts">
     import { handleLogin, isAuthenticated, user } from '$lib/auth/auth-store';
     import { goto } from '$app/navigation';
-    import { onMount } from 'svelte';
     import { browser } from '$app/environment';
 
     let isLoggingIn = false;
 
-// In your login/+page.svelte
-async function checkAndRedirect() {
-    console.log('Checking redirect conditions:', {
-        isAuthenticated: $isAuthenticated,
-        user: $user
-    });
-    
-    if ($isAuthenticated && $user) {
+    // Watch for authentication changes
+    $: if ($isAuthenticated && $user && browser) {
         const redirectPath = $user.role === 'admin' ? '/admin-dashboard' : '/user-dashboard';
+        console.log('User authenticated:', $user);
         console.log('Redirecting to:', redirectPath);
-        await goto(redirectPath);
+        goto(redirectPath);
     }
-}
 
     async function initiateLogin() {
         try {
@@ -26,7 +19,6 @@ async function checkAndRedirect() {
             await handleLogin();
         } catch (error) {
             console.error('Login failed:', error);
-        } finally {
             isLoggingIn = false;
         }
     }

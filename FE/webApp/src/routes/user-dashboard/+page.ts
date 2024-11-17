@@ -7,8 +7,6 @@ export const load: PageLoad = async () => {
     const currentUser = get(user);
     const isAuth = get(isAuthenticated);
 
-    console.log('User dashboard guard:', { isAuth, currentUser }); 
-
     if (!isAuth) {
         throw redirect(307, '/login');
     }

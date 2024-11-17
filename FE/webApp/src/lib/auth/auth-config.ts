@@ -6,6 +6,9 @@ export const authConfig: Auth0ClientOptions = {
     clientId: 'mUWSaw5J8fOgAtCuIwHMBIFBJwSIGkmV',
     authorizationParams: {
         redirect_uri: browser ? window.location.origin : 'http://localhost:5173',
-        scope: 'openid profile email'
-    }
+        scope: 'openid profile email',
+        response_type: 'code'
+    },
+    cacheLocation: 'localstorage',
+    useRefreshTokens: true
 };
