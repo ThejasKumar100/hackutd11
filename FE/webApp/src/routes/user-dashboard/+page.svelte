@@ -14,7 +14,7 @@
 </script>
 
 
-<Header />
+<Header title="User Dashboard" />
 
 <div class="dashboard-container">
     <div class="dashboard-content">
