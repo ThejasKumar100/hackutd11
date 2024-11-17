@@ -2,6 +2,7 @@
 @import 'tailwindcss/components';
 @import 'tailwindcss/utilities';
 @import '@fontsource/fira-mono';
+@import '@fontsource/geist-sans';
 
 :root {
 	--font-body: Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu,
@@ -15,7 +16,8 @@
 	--color-text: rgba(0, 0, 0, 0.7);
 	--column-width: 42rem;
 	--column-margin-top: 4rem;
-	font-family: var(--font-body);
+	font-family: 'Geist Sans', sans-serif;
+	/* font-family: var(--font-body); */
 	color: var(--color-text);
 }
 

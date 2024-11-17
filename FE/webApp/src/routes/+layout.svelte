@@ -1,6 +1,7 @@
 <script lang="ts">
     import { onMount } from 'svelte';
-    import { initializeAuth, isAuthenticated, isLoading, user } from '$lib/auth/auth-store';
+    // import { initializeAuth, isAuthenticated, isLoading, user } from '$lib/auth/auth-store';
+    import { initializeAuth, isAuthenticated, isLoading, user } from '../lib/auth/auth-store';
     import { goto } from '$app/navigation';
     import { page } from '$app/stores';
     import { browser } from '$app/environment';
@@ -11,6 +12,16 @@
         }
     });
 
+    // const geistSans = localFont({
+    //     src: "./fonts/GeistVF.woff",
+    //     variable: "--font-geist-sans",
+    //     weight: "100 900",
+    // });
+    // const geistMono = localFont({
+    //     src: "./fonts/GeistMonoVF.woff",
+    //     variable: "--font-geist-mono",
+    //     weight: "100 900",
+    // });
 	
     $: if (!$isLoading && browser) {
         console.log('Auth state changed:', {
@@ -28,6 +39,17 @@
         }
     }
 </script>
+
+<style lang="postcss">
+    :global(body) {
+        @apply bg-zinc-900;
+        font-family: var(--font-geist-sans);
+        font-size: 16px;
+        line-height: 1.5;
+        color: var(--geist-foreground);
+        background-color: var(--geist-background);
+    }
+</style>
 
 {#if $isLoading}
     <div>Loading...</div>

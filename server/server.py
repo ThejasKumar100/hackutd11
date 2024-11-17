@@ -239,5 +239,22 @@ def save_to_database(data: dict):
     print("MongoDB _id Inserted", mongo_data.inserted_id)
     pass
 
+# Get Applications Endpoints
+
+@app.get("/all-apps/")
+def get_all_apps():
+    all_apps_data = collection.find({})
+    return all_apps_data
+
+@app.get("/pending-apps/")
+def get_pending_apps():
+    pending_apps_data = collection.find({"is_approved": None})
+    return pending_apps_data
+
+@app.get("/completed-apps/")
+def get_completed_apps():
+    completed_apps_data = collection.find({ "$or": [ {"is_approved": True}, {"is_approved": False} ]})
+    return completed_apps_data
+
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
