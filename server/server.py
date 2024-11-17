@@ -8,18 +8,19 @@ import uuid
 import requests
 import uvicorn
 import os
-import openai
+from openai import OpenAI
 from dotenv import load_dotenv
 import os
+import io
 from pymongo import MongoClient
+from PIL import Image
+import json
 
 app = FastAPI()
+load_dotenv()
 
-# SAMBANOVA_API_KEY = os.environ.get("SAMBANOVA_API_KEY")
-SAMBANOVA_API_KEY = load_dotenv()
 
 # MongoDB Database Setup
-load_dotenv()
 mongo_cluster_connection_string = os.getenv("MONGO_CLUSTER_CONNECTION_STRING")
 client = MongoClient(mongo_cluster_connection_string)
 db = client["SwagAwesomeMoney"]
@@ -59,7 +60,9 @@ def test_database():
         print("ERROR: Document not removed.")
 
 # Comment Out If Needed
-test_database()
+#test_database()
+
+SAMBANOVA_API_KEY = os.getenv("SAMBANOVA_API_KEY")
 
 # Define the LLM response model for type checking
 class ApplicationResponse(BaseModel):
@@ -70,13 +73,32 @@ class ApplicationResponse(BaseModel):
     proposed_limit: int
     is_approved: bool = None
 
+
+def preprocess_image(image_bytes):
+    # convert bytes to an OpenCV image
+    image = np.array(Image.open(io.BytesIO(image_bytes)))
+
+    # convert to grayscale
+    # gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+
+    # increase contrast
+    # contrast_image = cv2.equalizeHist(gray_image)
+    # _, thresh_image = cv2.threshold(contrast_image, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+
+    return image
+
 # Function to extract text from images using OpenCV and pytesseract
 def extract_text_from_image(image_bytes: bytes) -> str:
+    # preprocessed_image = preprocess_image(image_bytes)
+
+    # # Run OCR (Tesseract)
+    # extracted_text = pytesseract.image_to_string(preprocessed_image)
+    # return extracted_text
     nparr = np.frombuffer(image_bytes, np.uint8)
     img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-    gray_img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    preprocessed_img = cv2.threshold(gray_img, 127, 255, cv2.THRESH_BINARY)[1]
-    extracted_text = pytesseract.image_to_string(preprocessed_img)
+    # gray_img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    # preprocessed_img = cv2.threshold(gray_img, 127, 255, cv2.THRESH_BINARY)[1]
+    extracted_text = pytesseract.image_to_string(img)
     return extracted_text
 
 # Function to validate extracted text (using LLM validation)
@@ -102,37 +124,43 @@ def validate_extracted_text_with_llm(extracted_texts: List[str]) -> dict:
         "Return a JSON object with a key `results`, containing an array of validation results for all inputs."
     )
 
-    # Prepare the query and context for Sambanova API
-    query = {
-        "messages": [
-            {"role": "system", "content": instructions},
-            {"role": "user", "content": {"texts": extracted_texts}}
-        ],
-        "model": "Llama-3.2-11B-Vision-Instruct",
-        "temperature": 0.1,
-        "top_p": 0.1
-    }
-
     # Send the request to the Sambanova API
-    response = requests.post(
-        f"https://api.sambanova.ai/v1/chat/completions/create",
-        headers={"Authorization": f"Bearer {SAMBANOVA_API_KEY}"},
-        json=query
+    sambaNovaClient = OpenAI(
+        base_url="https://api.sambanova.ai/v1", 
+        api_key=SAMBANOVA_API_KEY
+    )
+    print("SambaNova Client: ", sambaNovaClient)
+    print("SambaNova API Key: ", SAMBANOVA_API_KEY)
+
+    response = sambaNovaClient.chat.completions.create(
+        model='Llama-3.2-11B-Vision-Instruct',
+        messages = [
+            {"role": "system", "content": instructions},
+            {"role": "user", "content": "\n".join(extracted_texts)}
+            ],
+        temperature =  0.1,
+        top_p = 0.1
     )
 
+    print(response.choices[0].message.content)
+
     # Check if the response was successful
-    if response.status_code != 200:
-        raise HTTPException(status_code=500, detail=f"Error communicating with Sambanova API: {response.text}")
+    # if response.status_code != 200:
+    #     raise HTTPException(status_code=500, detail=f"Error communicating with Sambanova API: {response.text}")
+    # print("Completion: ", completion)
 
     # Parse the response
-    result = response.json()
-    response_content = result.get("choices", [{}])[0].get("message", {}).get("content", "")
-
     try:
-        # Attempt to parse the content into JSON
-        parsed_result = eval(response_content)  # Using eval for quick prototyping; switch to `json.loads` for safety
+        result = response.json()
+        choices = result.get("choices", [])
+        if not choices:
+            raise HTTPException(status_code=500, detail="No valid choices found in the API response")
+        
+        response_content = choices[0].get("message", {}).get("content", "")
+        parsed_result = json.loads(response_content)  # Using json.loads for safety
+
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to parse LLM response: {response_content}")
+        raise HTTPException(status_code=500, detail=f"Failed to parse LLM response: {str(e)}")
 
     # Validate the response structure
     if "results" not in parsed_result:
