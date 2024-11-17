@@ -40,7 +40,7 @@
     
     {#if import.meta.env.DEV}
         <div class="debug-info">
-            <p color="black">Authentication status: {$isAuthenticated ? 'Authenticated' : 'Not authenticated'}</p>
+            <p>Authentication status: {$isAuthenticated ? 'Authenticated' : 'Not authenticated'}</p>
             {#if $user}
                 <p>User email: {$user.email}</p>
                 <p>User role: {$user.role}</p>
@@ -64,6 +64,7 @@
         padding: 1rem;
         background: #f5f5f5;
         border-radius: 4px;
+        color: black;
     }
 
 
