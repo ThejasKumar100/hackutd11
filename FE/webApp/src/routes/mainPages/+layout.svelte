@@ -9,25 +9,52 @@
 
 </script>
 
+<div class="section1" color="black">
+    <p>This is Test Text!</p>
+</div>
+
+<div class="section2" color="black">
+    <p>This is Test Text!</p>
+</div>
+
+
 <style>
 
-.section1 {
+    .section1 {
 
-    position: sticky;
-    top: 50px;
-    left: 20px;
-    background-color: #f1f1f1;
-    width: 40vw;
+        position: relative;
+        top: 10vh;
+        left: 2vw;
+        background-color: #f1f1f1;
+        width: 36vw;
+        height: 85vh;
 
-    /* display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    min-height: 100vh; */
-    gap: 1rem;
-    color: white;
-}
+        /* display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh; */
+        gap: 1rem;
+        color: white;
+    }
 
+    .section2 {
+
+        position: relative;
+        top: -77vh;
+        left: 39vw;
+        background-color: #f1f1f1;
+        width: 59vw;
+        height: 85vh;
+
+        /* display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh; */
+        gap: 1rem;
+        color: white;
+    }
 
 </style>
 
