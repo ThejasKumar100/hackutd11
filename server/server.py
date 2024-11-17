@@ -18,6 +18,7 @@ import io
 from pymongo import MongoClient
 from PIL import Image
 import json
+import fitz
 
 app = FastAPI()
 load_dotenv()
@@ -91,34 +92,33 @@ async def upload_images(
 
     try:
         # Process images
-        processed_results, extracted_texts = await process_images(files)  # results and corresponding text returned separately since the text is needed for LLM validation
+        processed_results = await process_files(files)  # results and corresponding text returned separately since the text is needed for LLM validation
 
         # After extracting all texts, validate them in a single call
-        llm_results = validate_images_with_llm(extracted_texts)
+        llm_results = validate_images_with_llm(processed_results)
 
-        # Assign the validation results to the corresponding files
-        for idx, result in enumerate(processed_results):
-            if result["extracted_text"]:  # if we have extracted text, then we can assign the validation results
-                validation = llm_results[idx]
+        # # Assign the validation results to the corresponding files
+        # for idx, result in enumerate(processed_results):
+        #     if result["extracted_text"]:  # if we have extracted text, then we can assign the validation results
+        #         validation = llm_results[idx]
                 
-                # Log the raw LLM response for debugging
-                print(f"LLM validation response for file {result['filename']}: {validation}")
+        #         # Log the raw LLM response for debugging
+        #         print(f"LLM validation response for file {result['filename']}: {validation}")
                 
-                # Ensure the response contains 'is_valid' and 'reason' keys
-                # Ensure the response contains 'is_valid' and 'reason' keys
-        if "is_valid" in validation and "reason" in validation:
-            result["is_valid"] = validation["is_valid"]
-            result["reason"] = validation["reason"]
-            result["data"] = validation["data"]  # Ensure `data` is properly assigned
-        else:
-            # Handle the case where LLM response is not as expected
-            result["is_valid"] = False
-            result["reason"] = "LLM response format is incorrect or missing necessary fields."
-            result["data"] = None  # Ensure `data` is set to `None` in case of error
-            print(f"Error: Missing expected keys in LLM response for {result['filename']}")
+        #         # Ensure the response contains 'is_valid' and 'reason' keys
+        # if "is_valid" in validation and "reason" in validation:
+        #     result["is_valid"] = validation["is_valid"]
+        #     result["reason"] = validation["reason"]
+        #     result["data"] = validation["data"]  # Ensure `data` is properly assigned
+        # else:
+        #     # Handle the case where LLM response is not as expected
+        #     result["is_valid"] = False
+        #     result["reason"] = "LLM response format is incorrect or missing necessary fields."
+        #     result["data"] = None  # Ensure `data` is set to `None` in case of error
+        #     print(f"Error: Missing expected keys in LLM response for {result['filename']}")
 
         # After processing all images, calculate proposed score and limit
-        valid_images = [result for result in processed_results if result and result.get("is_valid")]
+        valid_images = [result for result in llm_results if result and result.get("is_valid")]
 
         proposed_score, proposed_limit = calculate_proposed_credit(valid_images)
         print(f"Proposed credit score: {proposed_score}, Proposed credit limit: {proposed_limit}")
@@ -126,7 +126,7 @@ async def upload_images(
         # Prepare the final response
         response_data = {
             "user_id": user_id,
-            "images": processed_results,
+            "images": llm_results,
             "proposed_score": proposed_score,
             "proposed_limit": proposed_limit,
             "is_approved": None,  # Will be set by admin
@@ -134,7 +134,13 @@ async def upload_images(
         }
 
         print("Saving to database...")
-        save_to_database(response_data)
+        print("extracted text:", response_data["images"][0]["extracted_text"][:100])
+        print("reason:", response_data["images"][0]["reason"][:100])
+        print("extracted text:", response_data["images"][1]["extracted_text"][:100])
+        print("reason:", response_data["images"][1]["reason"][:100])
+        print("extracted text:", response_data["images"][2]["extracted_text"][:100])
+        print("reason:", response_data["images"][2]["reason"][:100])
+        # save_to_database(response_data)
 
         if valid_images:
             # If at least one valid image, we confirm submission was successful
@@ -148,42 +154,53 @@ async def upload_images(
         raise HTTPException(status_code=500, detail="An unexpected error occurred while processing the images, please try again with new images.")
 
 
-async def process_images(files: List[UploadFile]) -> Tuple[List[dict], List[str]]:
+async def process_files(files: List[UploadFile]) -> List[dict]:
     """
-    Process images by extracting text and encoding the image.
+    Process image and PDF files by extracting text and encoding the data.
     Returns a tuple of processed results and a list of extracted texts.
     """
     processed_results = []
-    extracted_texts = []
 
-    # loop through eaach provided files and extract the text and file information, set up for LLM validation
-    for idx, file in enumerate(files):
+    for file in files:
         try:
             # Validate file type
             print(f"Processing file: {file.filename}, Content-Type: {file.content_type}")
-            if file.content_type not in ["image/jpeg", "image/png"]:
+
+            # Handle image files
+            if file.content_type in ["image/jpeg", "image/png"]:
+                image_bytes = await file.read()
+                encoded_image = base64.b64encode(image_bytes).decode("utf-8")  # Encode image data
+                print(f"Read {len(image_bytes)} bytes from file: {file.filename}")
+
+                # Extract text from the image bytes
+                extracted_text = extract_text_from_image(image_bytes)
+                print(f"Extracted text from {file.filename}: {extracted_text[:200]}...")
+
+                processed_results.append({
+                    "filename": file.filename,
+                    "extracted_text": extracted_text,
+                    "image_data": encoded_image,
+                    "is_valid": None,
+                    "reason": "temp reason"
+                })
+
+            # Handle PDF files
+            elif file.content_type == "application/pdf":
+                pdf_bytes = await file.read()
+                extracted_text = extract_text_from_pdf(pdf_bytes)
+                print(f"Extracted text from {file.filename}: {extracted_text[:200]}...")
+                pdf_base64 = base64.b64encode(pdf_bytes).decode("utf-8")
+
+                processed_results.append({
+                    "filename": file.filename,
+                    "extracted_text": extracted_text,
+                    "image_data": pdf_base64,  # stored a bit differently
+                    "is_valid": None,
+                    "reason": "temp reason"
+                })
+
+            else:
                 raise HTTPException(status_code=400, detail=f"Unsupported file type: {file.content_type}")
-
-            # Read image bytes
-            image_bytes = await file.read()
-            encoded_image = base64.b64encode(image_bytes).decode("utf-8")  # Encode image data
-            print(f"Read {len(image_bytes)} bytes from file: {file.filename}")
-
-            # Extract text from the image bytes
-            extracted_text = extract_text_from_image(image_bytes)
-            print(f"Extracted text from {file.filename}: {extracted_text[:200]}...")  # log the first 200 characters
-
-            # Accumulate the extracted text
-            extracted_texts.append(extracted_text)
-
-            # Add the file info to the processed results, without LLM validation yet
-            processed_results.append({
-                "filename": file.filename,
-                "extracted_text": extracted_text,
-                "image_data": encoded_image,
-                "is_valid": None,  # Will be filled later
-                "reason": ""  # Will be filled later
-            })
 
         except Exception as e:
             print(f"Error processing file {file.filename}: {e}")
@@ -195,7 +212,7 @@ async def process_images(files: List[UploadFile]) -> Tuple[List[dict], List[str]
                 "image_data": None
             })
 
-    return processed_results, extracted_texts
+    return processed_results
 
 
 def preprocess_image(image_bytes):
@@ -224,10 +241,30 @@ def extract_text_from_image(image_bytes: bytes) -> str:
 
     return cleaned_text
 
-# Function to validate extracted text (using LLM validation)
-def validate_images_with_llm(extracted_texts: List[str]) -> List[dict]:
+# Function to extract text from PDF files using PyMuPDF
+def extract_text_from_pdf(pdf_bytes: bytes) -> str:
     """
-    Validate the extracted text using the SambaNova LLM API. Returns a list of validation results with the format {is_valid, reason, data}.
+    Extract text from a PDF file using PyMuPDF.
+    """
+    try:
+        pdf_document = fitz.open(stream=io.BytesIO(pdf_bytes), filetype="pdf")
+        extracted_text = ""
+
+        # Extract text from each page
+        for page_num in range(pdf_document.page_count):
+            page = pdf_document.load_page(page_num)
+            extracted_text += page.get_text()
+
+        return extracted_text
+    except Exception as e:
+        print(f"Error extracting text from PDF: {e}")
+        raise ValueError(f"Failed to extract text from PDF: {e}")
+
+# Function to validate extracted text (using LLM validation)
+def validate_images_with_llm(processed_results: List[dict]) -> List[dict]:
+    """
+    Validate the extracted text from processed_results using the SambaNova LLM API.
+    Updates the processed_results list in place with 'is_valid' and 'reason' fields.
     """
     if not SAMBANOVA_API_KEY:
         raise HTTPException(status_code=500, detail="API key not found in environment variables")
@@ -236,14 +273,21 @@ def validate_images_with_llm(extracted_texts: List[str]) -> List[dict]:
         "You are validating a financial statement extracted from an image for a credit application. "
         "For this particular financial statement, ensure it meets these criteria: 1) All mandatory fields are present (e.g., date, amount). "
         "2) Numerical values are within reasonable ranges. 3) The format matches standard financial documents. "
-        "When validating, consider the possibility of fraudulent or inaccurate data, and provide a reason for rejection."
-        "However, note that the data format may be given the benefit of the doubt, as the text is extracted from images and thus does not line up perfectly."
-        "Return a JSON object with 'is_valid' (boolean), 'reason' (string), and any additional metadata."
+        "When validating, consider the possibility of fraudulent or inaccurate data, and provide a reason for rejection. "
+        "However, note that the data format may be given the benefit of the doubt, as the text is extracted from images and/or PDFs and thus does not line up perfectly with raw text. "
+        "Return a JSON object with 'is_valid' (boolean), 'reason' (string), and any additional metadata. "
         "Return only the JSON object, do not include code, text, or any other information, do not use markdown."
     )
 
-    validated_images = []
-    for extracted_text in extracted_texts:
+    for result in processed_results:
+        extracted_text = result.get("extracted_text")
+        
+        # Skip validation if no extracted text
+        if not extracted_text:
+            result["is_valid"] = False
+            result["reason"] = "No extracted text available for validation."
+            continue
+        
         try:
             response = SAMBANOVA_CLIENT.chat.completions.create(
                 model='Llama-3.2-11B-Vision-Instruct',
@@ -252,29 +296,23 @@ def validate_images_with_llm(extracted_texts: List[str]) -> List[dict]:
                 temperature=0.1,
                 top_p=0.1
             )
-            
+
             # Log the raw response for debugging
-            print(f"Raw response from LLM API: {response}")
-            
+            print(f"Raw response from LLM API for {result['filename']}: {response}")
+
             # Parse and clean the LLM response
             parsed_response = parse_llm_response(response)
 
-            validated_images.append({
-                "is_valid": parsed_response.get("is_valid", False),
-                "reason": parsed_response.get("reason", ""),
-                "data": extracted_text
-            })
-
+            # Update the result in place
+            result["is_valid"] = parsed_response.get("is_valid", False)
+            result["reason"] = parsed_response.get("reason", "No reason provided.")
+        
         except Exception as e:
-            print(f"Error during LLM validation: {e}")
-            validated_images.append({
-                "is_valid": False,
-                "reason": f"Error: {str(e)}",
-                "data": extracted_text
-            })
+            print(f"Error during LLM validation for {result['filename']}: {e}")
+            result["is_valid"] = False
+            result["reason"] = f"Validation failed due to an error: {str(e)}"
 
-    return validated_images
-
+    return processed_results  # Returning for consistency, though updates are in place.
 
 
 def parse_llm_response(response):
@@ -352,7 +390,7 @@ def calculate_proposed_credit(validated_images: List[dict]) -> dict:
     )
 
     content = json.loads(response.choices[0].message.content)
-
+    print(f"Proposed credit response: {content}")
     return content.get("proposed_score", 0), content.get("proposed_limit", 0)
 
 

@@ -3,15 +3,30 @@ import requests
 
 SERVER_URL = "http://localhost:8000/upload-images/"
 
-def send_images_to_server(image_paths, user_id):
+def send_files_to_server(file_paths, user_id):
     """
-    Send a list of image files to the server for validation.
+    Send a list of files (images or PDFs) to the server for validation.
     """
     # Prepare files for upload
-    files = [
-        ("files", (os.path.basename(image_path), open(image_path, "rb"), "image/png" if image_path.endswith(".png") else "image/jpeg"))
-        for image_path in image_paths
-    ]
+    files = []
+    for file_path in file_paths:
+        filename = os.path.basename(file_path)
+        # Determine content type based on file extension
+        if file_path.endswith(".png"):
+            content_type = "image/png"
+        elif file_path.endswith(".jpg") or file_path.endswith(".jpeg"):
+            content_type = "image/jpeg"
+        elif file_path.endswith(".pdf"):
+            content_type = "application/pdf"
+        else:
+            print(f"Unsupported file type for {filename}. Only .png, .jpeg, .jpg, and .pdf are supported.")
+            continue
+        
+        files.append(("files", (filename, open(file_path, "rb"), content_type)))
+    
+    if not files:
+        print("No valid files to upload.")
+        return None
     
     # Include user_id as form data
     data = {"user_id": user_id}
@@ -29,15 +44,15 @@ def send_images_to_server(image_paths, user_id):
 
 if __name__ == "__main__":
     # Example test setup
-    image_dir = "./test_images"
+    file_dir = "./test_files"  # Directory with images and PDFs
     user_id = "test_user_123"  # Replace with the appropriate test user ID
-    image_paths = [os.path.join(image_dir, img) for img in os.listdir(image_dir) if img.endswith((".png", ".jpg", ".jpeg"))]
+    file_paths = [os.path.join(file_dir, file) for file in os.listdir(file_dir) if file.endswith((".png", ".jpg", ".jpeg", ".pdf"))]
 
-    if not image_paths:
-        print("No valid images found in the directory.")
+    if not file_paths:
+        print("No valid files found in the directory.")
     else:
-        print(f"Loaded {len(image_paths)} image(s) from {image_dir}.")
-        response = send_images_to_server(image_paths, user_id)
+        print(f"Loaded {len(file_paths)} file(s) from {file_dir}.")
+        response = send_files_to_server(file_paths, user_id)
         if response:
             print("Server response:")
             print(response)
