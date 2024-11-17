@@ -7,8 +7,51 @@ import numpy as np
 import uuid
 import requests
 import uvicorn
+import os
+from dotenv import load_dotenv
+from pymongo import MongoClient
 
 app = FastAPI()
+
+# MongoDB Database Setup
+load_dotenv()
+mongo_cluster_connection_string = os.getenv("MONGO_CLUSTER_CONNECTION_STRING")
+client = MongoClient(mongo_cluster_connection_string)
+db = client["SwagAwesomeMoney"]
+collection = db["Baller"]
+
+# Testing Database
+
+# Initial Query Test Data
+print("Initial data below if any")
+results = collection.find({})
+for document in results:
+    print("initial document", document)
+
+# Insert Test Data
+testing_data = {"name": "Emily", "group": "capybara"}
+testing_insert = collection.insert_one(testing_data)
+print("Testing Insert Object", testing_insert)
+print("Testing Insert _id", testing_insert.inserted_id)
+
+# Query Test Data
+results = collection.find({"name": "Emily", "group": "capybara"})
+for document in results:
+    print("added document", document)
+
+# Remove Test Data
+collection.delete_many({"name": "Emily", "group": "capybara"})
+
+# Query Test Data to Check Removal
+test_removal_flag = True
+results = collection.find({"name": "Emily", "group": "capybara"})
+for document in results:
+    print("remaining document", document)
+    test_removal_flag = False
+if test_removal_flag:
+    print("Document successfully removed.")
+else:
+    print("ERROR: Document not removed.")
 
 # Define the LLM response model for type checking
 class ApplicationResponse(BaseModel):
