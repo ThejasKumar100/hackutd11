@@ -46,8 +46,9 @@
         font-family: var(--font-geist-sans);
         font-size: 16px;
         line-height: 1.5;
-        color: var(--geist-foreground);
-        background-color: var(--geist-background);
+        /* color: var(--geist-foreground); */
+        /* background-color: var(--geist-background); */
+        background-color: bg-zinc-900;
     }
 </style>
 
