@@ -1,6 +1,7 @@
 import base64
 import datetime
 from fastapi import FastAPI, Form, HTTPException, File, UploadFile
+from fastapi.middleware.cors import CORSMiddleware
 from typing import List, Tuple
 from pydantic import BaseModel
 import cv2
@@ -21,6 +22,15 @@ import json
 import fitz
 
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # You can replace "*" with your frontend URL for more security
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 load_dotenv()
 
 
