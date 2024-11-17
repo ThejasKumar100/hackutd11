@@ -30,6 +30,7 @@ mongo_cluster_connection_string = os.getenv("MONGO_CLUSTER_CONNECTION_STRING")
 client = MongoClient(mongo_cluster_connection_string)
 db = client["SwagAwesomeMoney"]
 collection = db["Baller"]
+customer_collection = db["Customer"]
 
 # Testing Database
 def test_database():
@@ -401,10 +402,20 @@ def get_user_apps(user_id):
     return user_apps_data
 
 # Endpoints for Nabil
-# Database: SwagAwesomeMoney, Collection: Customer
+# Database: SwagAwesomeMoney, Collection: Customer (customer_collection)
 
-#include customer name, email, phone number, and address
-#I think we store their uploaded documents with it too and have a boolean value that tracks their application status
+# Uses query parameters (user_id is auth0 id)
+@app.post("/new-customer/")
+def insert_new_customer(user_id: str, name: str, email: str, phone: str, address: str):
+    json_data = {"user_id": user_id, "name": name, "email": email, "phone": phone, "address": address}
+    mongo_data = customer_collection.insert_one(json_data)
+    print("MongoDB Customer with user_id Inserted", user_id)
+
+# user_id is the auth0 id
+@app.get("/customer/{user_id}")
+def get_customer_data(user_id):
+    customer_data = dumps(customer_collection.find({"user_id": user_id}))
+    return customer_data
 
 
 if __name__ == "__main__":
