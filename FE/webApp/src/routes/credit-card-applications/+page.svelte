@@ -9,6 +9,7 @@
 			userId = $user.sub; // Get user_id (sub field) from the user profile
 		}
 	}
+	$: files.proofOfIncome; // Ensure reactivity
 
 	interface FileState {
 		idDocument: File | null;
@@ -26,12 +27,12 @@
 	function handleFileChange(event: Event, documentType: keyof FileState): void {
 		const input = event.target as HTMLInputElement;
 		if (input.files) {
+			console.log('Files selected:', input.files);
 			if (documentType === 'proofOfIncome') {
-				files.proofOfIncome.push(...Array.from(input.files));
-				console.log(files.proofOfIncome);
+				files.proofOfIncome = [...files.proofOfIncome, ...Array.from(input.files)];
+				console.log('Updated proofOfIncome array:', files.proofOfIncome);
 			} else {
 				files[documentType] = input.files[0];
-				console.log(files[documentType]);
 			}
 		}
 	}
@@ -68,6 +69,7 @@
 				};
 			} else {
 				const responseData = await response.json();
+				console.log('Response data:', responseData);
 				uploadResponse = {
 					status: 'success',
 					message: 'Files uploaded successfully!'
@@ -162,7 +164,7 @@
 {#if uploadResponse}
 	<div class="popup">
 		<div class="popup-content">
-			<p>{uploadResponse.message}</p>
+			<p>{uploadResponse.message || 'Successfully submitted the application!'}</p>
 			<button on:click={() => (uploadResponse = null)}>Close</button>
 		</div>
 	</div>
@@ -263,6 +265,7 @@
 		list-style-type: none;
 		padding-left: 0;
 		margin-top: 1rem;
+		text-align: center;
 	}
 
 	.file-name {
@@ -315,11 +318,41 @@
 		position: fixed;
 		top: 0;
 		left: 0;
-		right: 0;
-		bottom: 0;
-		background-color: rgba(0, 0, 0, 0.5);
+		width: 100%;
+		height: 100%;
+		background: rgba(0, 0, 0, 0.5);
+		color: black;
 		display: flex;
 		justify-content: center;
 		align-items: center;
+		z-index: 1000;
+	}
+
+	.popup-content {
+		background: white;
+		padding: 1.5rem;
+		border-radius: 8px;
+		box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+		text-align: center;
+	}
+
+	.loading-spinner {
+		border: 4px solid rgba(0, 0, 0, 0.1);
+		border-top: 4px solid #3498db;
+		border-radius: 50%;
+		width: 20px;
+		height: 20px;
+		animation: spin 1s linear infinite;
+		display: inline-block;
+		margin-right: 8px;
+	}
+
+	@keyframes spin {
+		from {
+			transform: rotate(0deg);
+		}
+		to {
+			transform: rotate(360deg);
+		}
 	}
 </style>
