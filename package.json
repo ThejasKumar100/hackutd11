@@ -8,6 +8,7 @@
     "svelte": "^5.2.2"
   },
   "devDependencies": {
+    "@sveltejs/vite-plugin-svelte": "^4.0.1",
     "@types/nodemailer": "^6.4.16"
   }
 }

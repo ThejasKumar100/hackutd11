@@ -7,9 +7,6 @@ const config = {
         adapter: adapter(),
         alias: {
             $lib: './src/lib'
-        },
-        env: {
-            dir: process.cwd()
         }
     },
     preprocess: vitePreprocess()

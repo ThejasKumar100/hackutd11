@@ -53,11 +53,15 @@ export async function initializeAuth(): Promise<void> {
         if (isAuthenticatedResult) {
             const userProfile = await client.getUser();
             if (userProfile) {
+                console.log('User profile:', userProfile); // Debug log
                 const isAdmin = ADMIN_EMAILS.includes(userProfile.email || '');
+                console.log('Is admin:', isAdmin); // Debug log
+                
                 const userWithRole: ExtendedUser = {
                     ...userProfile,
                     role: isAdmin ? UserRole.ADMIN : UserRole.USER
                 };
+                console.log('User with role:', userWithRole); // Debug log
                 user.set(userWithRole);
             }
         }
@@ -73,13 +77,22 @@ export async function handleLogin(): Promise<void> {
     if (!browser) return;
 
     try {
-        const client = get(auth0Client);
-        if (!client) {
-            throw new Error('Auth0 client not initialized');
-        }
-        await client.loginWithRedirect();
+        console.log('Initializing Auth0 client...');
+        const client = new Auth0Client(authConfig);
+        auth0Client.set(client);
+        
+        console.log('Starting login redirect...');
+        await client.loginWithRedirect({
+            authorizationParams: {
+                redirect_uri: window.location.origin,
+                scope: 'openid profile email',
+                response_type: 'code'
+            }
+        });
     } catch (e) {
+        console.error('Login error:', e);
         error.set(e instanceof Error ? e : new Error(String(e)));
+        throw e;
     }
 }
 

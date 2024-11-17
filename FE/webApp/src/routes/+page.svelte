@@ -1,17 +1,23 @@
 <script lang="ts">
-    import { isAuthenticated } from '$lib/auth/auth-store';
+    import { isAuthenticated, handleLogin } from '$lib/auth/auth-store';
     import { goto } from '$app/navigation';
 
-    function handleLoginClick() {
-        goto('/login');
+    async function handleLoginClick() {
+        try {
+            console.log('Initiating login...');
+            await handleLogin();
+        } catch (error) {
+            console.error('Login error:', error);
+            goto('/login');
+        }
     }
 </script>
+
 
 <div class="login-container">
     <h1>Welcome</h1>
 
     {#if !$isAuthenticated}
-
         <!-- From Uiverse.io by cssbuttons-io  -->
         <button class="learn-more" on:click={handleLoginClick}>
             <span class="circle" aria-hidden="true">
