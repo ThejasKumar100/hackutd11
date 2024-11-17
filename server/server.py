@@ -19,6 +19,7 @@ from pymongo import MongoClient
 from PIL import Image
 import json
 import fitz
+from bson.json_util import dumps
 
 app = FastAPI()
 load_dotenv()
@@ -375,22 +376,36 @@ def save_to_database(data: dict):
     print("MongoDB _id Inserted", mongo_data.inserted_id)
     pass
 
-# Get Applications Endpoints
+# Get Applications Endpoints (For Admin Dashboard and Decision Screens)
+# Database: SwagAwesomeMoney, Collection: Baller
 
 @app.get("/all-apps/")
 def get_all_apps():
-    all_apps_data = collection.find({})
+    all_apps_data = dumps(collection.find({}))
     return all_apps_data
 
 @app.get("/pending-apps/")
 def get_pending_apps():
-    pending_apps_data = collection.find({"is_approved": None})
+    pending_apps_data = dumps(collection.find({"is_approved": None}))
     return pending_apps_data
 
 @app.get("/completed-apps/")
 def get_completed_apps():
-    completed_apps_data = collection.find({ "$or": [ {"is_approved": True}, {"is_approved": False} ]})
+    completed_apps_data = dumps(collection.find({ "$or": [ {"is_approved": True}, {"is_approved": False} ]}))
     return completed_apps_data
+
+# Applications for Specific User
+@app.get("/user-apps/{user_id}")
+def get_user_apps(user_id):
+    user_apps_data = dumps(collection.find({"user_id": user_id}))
+    return user_apps_data
+
+# Endpoints for Nabil
+# Database: SwagAwesomeMoney, Collection: Customer
+
+#include customer name, email, phone number, and address
+#I think we store their uploaded documents with it too and have a boolean value that tracks their application status
+
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
