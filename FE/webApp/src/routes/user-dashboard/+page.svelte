@@ -1,6 +1,10 @@
 <script lang="ts">
     import AuthGuard from '$lib/components/AuthGuard.svelte';
     import { user, logout } from '$lib/auth/auth-store';
+    import { browser } from '$app/environment';
+    import { redirect } from '@sveltejs/kit';
+    import { get } from 'svelte/store';
+    import { isAuthenticated } from '$lib/auth/auth-store';
 </script>
 
 <AuthGuard>

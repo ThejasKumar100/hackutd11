@@ -3,17 +3,26 @@
     import { goto } from '$app/navigation';
 
     $: if ($isAuthenticated && $user) {
-        if ($user.email === 'admin@example.com') {
+        // Redirect based on role
+        if ($user.role === 'admin') {
             goto('/admin-dashboard');
         } else {
             goto('/user-dashboard');
         }
     }
+
+    async function handleLogin() {
+        try {
+            await login();
+        } catch (error) {
+            console.error('Login failed:', error);
+        }
+    }
 </script>
 
 <div class="login-container">
-    <h1>Welcome</h1>
-    <button on:click={login}>Log In</button>
+    <h1>Login</h1>
+    <button on:click={handleLogin}>Log in with Auth0</button>
 </div>
 
 <style>
@@ -22,6 +31,7 @@
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        height: 100vh;
+        min-height: 100vh;
+        gap: 1rem;
     }
 </style>
