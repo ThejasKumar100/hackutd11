@@ -9,7 +9,7 @@ type AuthStore = Writable<Auth0Client | null>;
 type UserStore = Writable<ExtendedUser | null>;
 type ErrorStore = Writable<Error | null>;
 
-const ADMIN_EMAILS = ['nabil931260@gmail.com', 'tjkumar50@gmail.com', 'thejaskumar100@gmail.com']; // admin emails here
+const ADMIN_EMAILS = ['nabil931260@gmail.com', 'tjkumar50@gmail.com', 'duyenemily.nguyen@gmail.com']; // admin emails here
 
 const createAuthStore = (): AuthStore => {
     const { subscribe, set, update } = writable<Auth0Client | null>(null);
