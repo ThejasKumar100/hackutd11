@@ -39,6 +39,17 @@
     }
 </script>
 
+<style lang="postcss">
+    :global(body) {
+        @apply bg-zinc-900;
+        font-family: var(--font-geist-sans);
+        font-size: 16px;
+        line-height: 1.5;
+        color: var(--geist-foreground);
+        background-color: var(--geist-background);
+    }
+</style>
+
 {#if $isLoading}
     <div>Loading...</div>
 {:else}
