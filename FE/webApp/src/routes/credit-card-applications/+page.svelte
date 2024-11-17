@@ -19,21 +19,27 @@
 		idDocument: null,
 		proofOfIncome: []
 	};
+
+	let uploading = false;
+	let uploadResponse: { status: string; message: string } | null = null;
+
 	function handleFileChange(event: Event, documentType: keyof FileState): void {
 		const input = event.target as HTMLInputElement;
 		if (input.files) {
 			if (documentType === 'proofOfIncome') {
 				files.proofOfIncome.push(...Array.from(input.files));
-				console.log('proofOfIncome files:', files.proofOfIncome);
+				console.log(files.proofOfIncome);
 			} else {
 				files[documentType] = input.files[0];
-				console.log('idDocument file:', files.idDocument);
+				console.log(files[documentType]);
 			}
 		}
 	}
 
 	const handleSubmit = async () => {
 		const formData = new FormData();
+		uploading = true;
+		uploadResponse = null;
 
 		// Append user_id
 		formData.append('user_id', userId);
@@ -48,11 +54,6 @@
 			formData.append('files', file); // Add each file to the "files" field
 		});
 
-		// Log FormData content (for debugging purposes)
-		for (let [key, value] of formData.entries()) {
-			console.log(key, value);
-		}
-
 		// Send the request to the server
 		try {
 			const response = await fetch('http://localhost:8000/upload-images/', {
@@ -61,13 +62,26 @@
 			});
 
 			if (!response.ok) {
-				console.error('Error uploading files:', await response.json());
+				uploadResponse = {
+					status: 'error',
+					message: `Error uploading files: ${await response.text()}`
+				};
 			} else {
 				const responseData = await response.json();
-				console.log('Server response:', responseData);
+				uploadResponse = {
+					status: 'success',
+					message: 'Files uploaded successfully!'
+				};
+				// Clear the files after successful upload
+				files = { idDocument: null, proofOfIncome: [] };
 			}
 		} catch (error) {
-			console.error('Error sending request:', error);
+			uploadResponse = {
+				status: 'error',
+				message: `Error sending request: ${error.message}`
+			};
+		} finally {
+			uploading = false;
 		}
 	};
 
@@ -103,6 +117,9 @@
 							/>
 							<span class="button-text">Upload ID Document</span>
 						</label>
+						{#if files.idDocument}
+							<p class="file-name">{files.idDocument.name}</p>
+						{/if}
 					</div>
 
 					<div class="document-upload panel">
@@ -117,17 +134,39 @@
 							/>
 							<span class="button-text">Upload Income Proof</span>
 						</label>
+						{#if files.proofOfIncome.length > 0}
+							<ul class="file-list">
+								{#each files.proofOfIncome as file}
+									<li>{file.name}</li>
+								{/each}
+							</ul>
+						{/if}
 					</div>
 				</div>
 			</div>
 
 			<div class="button-group">
 				<button type="button" class="cancel-button" on:click={handleCancel}> Cancel </button>
-				<button type="submit" class="submit-button"> Submit Application </button>
+				<button type="submit" class="submit-button" disabled={uploading}>
+					{#if uploading}
+						<span class="loading-spinner"></span> Uploading...
+					{:else}
+						Submit Application
+					{/if}
+				</button>
 			</div>
 		</form>
 	</div>
 </div>
+
+{#if uploadResponse}
+	<div class="popup">
+		<div class="popup-content">
+			<p>{uploadResponse.message}</p>
+			<button on:click={() => (uploadResponse = null)}>Close</button>
+		</div>
+	</div>
+{/if}
 
 <style>
 	.application-container {
@@ -218,6 +257,20 @@
 		transform: translateY(-2px);
 	}
 
+	.file-list {
+		color: white;
+		font-size: 0.9rem;
+		list-style-type: none;
+		padding-left: 0;
+		margin-top: 1rem;
+	}
+
+	.file-name {
+		color: white;
+		font-size: 0.9rem;
+		text-align: center;
+	}
+
 	.button-group {
 		display: flex;
 		justify-content: flex-end;
@@ -258,36 +311,15 @@
 		transform: translateY(-2px);
 	}
 
-	@media (max-width: 768px) {
-		.application-content {
-			padding: 1.5rem;
-		}
-
-		h1 {
-			font-size: 2rem;
-		}
-
-		.subtitle {
-			font-size: 1rem;
-		}
-
-		.document-section h2 {
-			font-size: 1.5rem;
-		}
-
-		.panel {
-			padding: 1.5rem;
-		}
-
-		h3 {
-			font-size: 1.2rem;
-		}
-
-		.button-text,
-		.cancel-button,
-		.submit-button {
-			font-size: 0.9rem;
-			padding: 0.75rem 1.25rem;
-		}
+	.popup {
+		position: fixed;
+		top: 0;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		background-color: rgba(0, 0, 0, 0.5);
+		display: flex;
+		justify-content: center;
+		align-items: center;
 	}
 </style>

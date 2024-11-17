@@ -1,128 +1,68 @@
 <script lang="ts">
-	import Header from '../user-dashboard/Header.svelte';
+	import { handleLogin, isAuthenticated, user } from '$lib/auth/auth-store';
 	import { goto } from '$app/navigation';
-	import { user } from '$lib/auth/auth-store';
-	let userId: string | undefined = undefined;
+	import { browser } from '$app/environment';
 
-	// Subscribe to the user store and update userId reactively
-	$: if ($user) {
-		userId = $user.sub; // Get user_id (sub field) from the user profile
+	let isLoggingIn = false;
+
+	// Watch for authentication changes
+	$: if ($isAuthenticated && $user && browser) {
+		const redirectPath = $user.role === 'admin' ? '/admin-dashboard' : '/user-dashboard';
+		console.log('User authenticated:', $user);
+		console.log('Redirecting to:', redirectPath);
+		goto(redirectPath);
 	}
 
-	interface FileState {
-		idDocument: File | null;
-		proofOfIncome: File[]; // Allow multiple files
-	}
-
-	let files: FileState = {
-		idDocument: null,
-		proofOfIncome: []
-	};
-
-	// Handle file changes
-	function handleFileChange(event: Event, documentType: keyof FileState): void {
-		const input = event.target as HTMLInputElement;
-		if (input.files) {
-			if (documentType === 'proofOfIncome') {
-				files.proofOfIncome = Array.from(input.files); // Add all selected files
-			} else {
-				files[documentType] = input.files[0]; // Single file for ID document
-			}
-		}
-	}
-
-	// Handle form submission
-	async function handleSubmit(): Promise<void> {
-		const formData = new FormData();
-
-		// Append user_id to formData if it's available
-		if (userId) {
-			formData.append('user_id', userId);
-		}
-
-		// Append ID Document
-		if (files.idDocument) {
-			formData.append('idDocument', files.idDocument);
-		}
-
-		// Append Proof of Income Files
-		files.proofOfIncome.forEach((file, index) => {
-			formData.append(`proofOfIncome[${index}]`, file);
-		});
-
+	async function initiateLogin() {
 		try {
-			const response = await fetch('http://localhost:8000/upload-images/', {
-				method: 'POST',
-				body: formData
-			});
-
-			if (response.ok) {
-				console.log('Files successfully uploaded');
-				goto('/user-dashboard');
-			} else {
-				console.error('Error uploading files:', await response.text());
-			}
+			isLoggingIn = true;
+			await handleLogin();
 		} catch (error) {
-			console.error('Submission failed:', error);
+			console.error('Login failed:', error);
+			isLoggingIn = false;
 		}
-	}
-
-	// Handle cancel action
-	function handleCancel(): void {
-		goto('/user-dashboard');
 	}
 </script>
 
-<Header />
-
-<div class="application-container">
-	<div class="application-content">
-		<div class="application-header">
-			<h1>Credit Card Application</h1>
-			<p class="subtitle">Please provide sufficient documents to process your application</p>
+<div class="login-container">
+	<div class="login-card">
+		<div class="auth0-logo">
+			<svg viewBox="0 0 24 24" width="32" height="32">
+				<path
+					fill="currentColor"
+					d="M21.98 7.448L19.62 0H4.347L2.02 7.448c-1.352 4.312.03 9.206 3.815 12.015L12 24l6.165-4.537c3.784-2.81 5.167-7.703 3.815-12.015zM12 6.634a2.978 2.978 0 110 5.956 2.978 2.978 0 010-5.956zm-6.921 9.198a7.026 7.026 0 01-.233-5.02l1.92-5.772h4.87a5.013 5.013 0 00-2.747 4.474c0 2.027 1.18 3.778 2.892 4.596a5.066 5.066 0 01-6.702 1.722zm13.842 0a5.066 5.066 0 01-6.702-1.722 5.013 5.013 0 002.892-4.596c0-1.97-1.121-3.68-2.747-4.474h4.87l1.92 5.773a7.026 7.026 0 01-.233 5.02z"
+				/>
+			</svg>
 		</div>
+		<h1>Welcome</h1>
+		<p class="subtitle">Log in to HackUTD24 to continue</p>
 
-		<form class="application-form" on:submit|preventDefault={handleSubmit}>
-			<div class="document-section">
-				<h2>Required Documents</h2>
+		<button class="login-button" on:click={initiateLogin} disabled={isLoggingIn}>
+			<span class="button-content">
+				{#if isLoggingIn}
+					<div class="spinner"></div>
+					Logging in...
+				{:else}
+					<svg viewBox="0 0 24 24" width="18" height="18" class="google-icon">
+						<path
+							fill="currentColor"
+							d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm5.36 14.3c-.93-1.46-2.58-2.3-4.36-2.3s-3.43.84-4.36 2.3c-.84-1.27-1.36-2.79-1.36-4.3 0-4.42 3.58-8 8-8s8 3.58 8 8c0 1.51-.52 3.03-1.36 4.3z"
+						/>
+					</svg>
+					Continue with Auth0
+				{/if}
+			</span>
+		</button>
 
-				<div class="document-grid">
-					<div class="document-upload panel">
-						<h3>Government ID</h3>
-						<p class="description">
-							Upload a valid government-issued ID (passport, driver's license)
-						</p>
-						<label class="upload-button">
-							<input
-								type="file"
-								accept=".pdf,.jpg,.jpeg,.png"
-								on:change={(e) => handleFileChange(e, 'idDocument')}
-							/>
-							<span class="button-text">Upload ID Document</span>
-						</label>
-					</div>
-
-					<div class="document-upload panel">
-						<h3>Proof of Income</h3>
-						<p class="description">Bills, Rent Invoices, Property Deeds, etc</p>
-						<label class="upload-button">
-							<input
-								type="file"
-								accept=".pdf,.jpg,.jpeg,.png"
-								multiple
-								on:change={(e) => handleFileChange(e, 'proofOfIncome')}
-							/>
-							<span class="button-text">Upload Income Proof</span>
-						</label>
-					</div>
-				</div>
+		{#if import.meta.env.DEV}
+			<div class="debug-info">
+				<p>Status: {$isAuthenticated ? 'Authenticated' : 'Not authenticated'}</p>
+				{#if $user}
+					<p>Email: {$user.email}</p>
+					<p>Role: {$user.role}</p>
+				{/if}
 			</div>
-
-			<div class="button-group">
-				<button type="button" class="cancel-button" on:click={handleCancel}> Cancel </button>
-				<button type="submit" class="submit-button"> Submit Application </button>
-			</div>
-		</form>
+		{/if}
 	</div>
 </div>
 
