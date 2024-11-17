@@ -2,23 +2,25 @@
     import Header from '../user-dashboard/Header.svelte';
     import { goto } from '$app/navigation';
 
-    // Mock user data (replace with actual data fetching logic)
     let user = {
-        name: "John Doe",
-        email: "john.doe@example.com",
-        phone: "+1 234 567 8900",
-        address: "123 Main St, Anytown, USA"
+        name: "Jose Pablo",
+        email: "email@example.com",
+        phone: "",
+        address: ""
     };
 
     function handleSave() {
-        // Implement save logic here
         console.log('Saving user details:', user);
-        // After saving, you might want to show a success message or redirect
     }
 
     function handleCancel() {
         goto('/user-dashboard');
     }
+
+    function saveChanges() {
+        goto('/user-dashboard');
+    }
+
 </script>
 
 <Header />
@@ -57,7 +59,7 @@
                 <button type="button" class="cancel-button" on:click={handleCancel}>
                     Cancel
                 </button>
-                <button type="submit" class="save-button">
+                <button type="submit" class="save-button" on:click={saveChanges}>
                     Save Changes
                 </button>
             </div>
