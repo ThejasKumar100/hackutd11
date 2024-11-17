@@ -5,15 +5,17 @@ import { authConfig } from './auth-config';
 
 // Define types
 type AuthStore = Writable<Auth0Client | null>;
-type UserStore = Writable<User | null>;
+type UserStore = Writable<(User & { role?: UserRole }) | null>;
 type ErrorStore = Writable<Error | null>;
+type UserRole = 'admin' | 'user';   // admin & user type;
+
 
 // Initialize stores with proper types
 const createAuthStore = (): AuthStore => {
     const { subscribe, set, update } = writable<Auth0Client | null>(null);
     return {
         subscribe,
-        set: (client: Auth0Client | null) => set(client),
+        set,
         update
     };
 };
@@ -22,7 +24,7 @@ const createUserStore = (): UserStore => {
     const { subscribe, set, update } = writable<User | null>(null);
     return {
         subscribe,
-        set: (userData: User | null) => set(userData),
+        set,
         update
     };
 };
@@ -31,7 +33,7 @@ const createErrorStore = (): ErrorStore => {
     const { subscribe, set, update } = writable<Error | null>(null);
     return {
         subscribe,
-        set: (error: Error | null) => set(error),
+        set,
         update
     };
 };
@@ -49,7 +51,6 @@ export async function initializeAuth(): Promise<void> {
         const client = new Auth0Client(authConfig);
         auth0Client.set(client);
 
-        // Check if user was redirected after login
         if (window.location.search.includes("code=")) {
             await client.handleRedirectCallback();
             window.history.replaceState({}, document.title, window.location.pathname);
@@ -61,7 +62,12 @@ export async function initializeAuth(): Promise<void> {
         if (isAuthenticatedResult) {
             const userProfile = await client.getUser();
             if (userProfile) {
-                user.set(userProfile);
+                // Add role based on email
+                const isAdmin = userProfile.email === 'admin@example.com';
+                user.set({
+                    ...userProfile,
+                    role: isAdmin ? 'admin' : 'user'
+                });
             }
         }
     } catch (e) {
@@ -101,12 +107,11 @@ export async function logout(): Promise<void> {
         if (!currentClient) {
             throw new Error('Auth0 client not initialized');
         }
-        const logoutOptions: LogoutOptions = {
+        await currentClient.logout({
             logoutParams: {
-                returnTo: window.location.origin
+                returnTo: browser ? window.location.origin : 'http://localhost:5173'
             }
-        };
-        await currentClient.logout(logoutOptions);
+        });
     } catch (e) {
         if (e instanceof Error) {
             error.set(e);

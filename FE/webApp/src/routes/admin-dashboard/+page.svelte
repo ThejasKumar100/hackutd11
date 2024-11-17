@@ -1,20 +1,30 @@
 <script lang="ts">
-    import AuthGuard from '$lib/components/AuthGuard.svelte';
     import { user, logout } from '$lib/auth/auth-store';
 </script>
 
-<AuthGuard>
-    <div class="dashboard">
-        <h1>Admin Dashboard</h1>
-        {#if $user}
-            <p>Welcome, Admin {$user.name}</p>
-        {/if}
-        <button on:click={logout}>Logout</button>
-    </div>
-</AuthGuard>
+<div class="admin-dashboard">
+    <h1>Admin Dashboard</h1>
+    {#if $user}
+        <p>Welcome, Admin {$user.name}</p>
+        <div class="admin-controls">
+            <h2>Admin Controls</h2>
+            <!-- Add your admin-specific controls here -->
+        </div>
+    {/if}
+    <button on:click={logout}>Logout</button>
+</div>
 
 <style>
-    .dashboard {
+    .admin-dashboard {
         padding: 2rem;
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+
+    .admin-controls {
+        margin-top: 2rem;
+        padding: 1rem;
+        border: 1px solid #ccc;
+        border-radius: 4px;
     }
 </style>
