@@ -31,10 +31,12 @@
         align-items: center;
         justify-content: center;
         min-height: 100vh;
+        color: white;
+        /* font-family: "Geist Sans"; */
     }
 
+
     /* --------------------------- Button 1 */
-/* From Uiverse.io by cssbuttons-io */ 
 button {
 	position: relative;
 	display: inline-block;
