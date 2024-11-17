@@ -56,6 +56,20 @@
                     <h2>Pending Applications</h2>
                     <div class="applications-list">
                         <!-- database -->
+                         <!-- {#if $app}
+                            {#each $app as application}
+                                <div class="application-item">
+                                    <span class="label">Application ID</span>
+                                    <span class="value">{application.id}</span>
+                                    <span class="label">Applicant</span>
+                                    <span class="value">{application.applicant}</span>
+                                    <span class="label">Date</span>
+                                    <span class="value">{application.date}</span>
+                                    <button class="action-button">View Application</button>
+                                </div>
+                            {/each}
+                         {:else}
+                         {/if} -->
                         <p class="no-applications">No pending applications</p>
                     </div>
                 </section>
