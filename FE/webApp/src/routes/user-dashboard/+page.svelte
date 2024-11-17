@@ -1,7 +1,7 @@
 <script lang="ts">
-    import Header from './Header.svelte';
-    import { user } from '$lib/auth/auth-store';
-    import { goto } from '$app/navigation';
+	import Header from './Header.svelte';
+	import { user } from '$lib/auth/auth-store';
+	import { goto } from '$app/navigation';
 
     // Sample applications data
     let applications = [
@@ -18,59 +18,99 @@
             submittedDate: new Date().toLocaleDateString()
         }
     ];
+	import { onMount } from 'svelte';
+	let userId: string | undefined = undefined;
+
+	$: {
+		if ($user) {
+			userId = $user.sub;
+		}
+	}
+
+	let pendingApplications = [];
+	let loading = true;
+	let error = null;
 
     function applyForCreditCard() {
         goto('/credit-card-applications');
     }
 
-    function goToAccountDetails() {
-        goto('/account-details');
-    }
+	function goToAccountDetails() {
+		goto('/account-details');
+	}
+
+	async function fetchPendingApplications() {
+		try {
+			let url = `http://localhost:8000/pending-user-apps/${userId}`;
+			const response = await fetch(url);
+			if (!response.ok) {
+				throw new Error(`Failed to fetch applications: ${response.statusText}`);
+			}
+			pendingApplications = await response.json();
+		} catch (err) {
+			console.error('Error fetching applications:', err);
+			if (err instanceof Error) {
+				error = err.message;
+			} else {
+				error = String(err);
+			}
+		} finally {
+			loading = false;
+			console.log('Pending applications:', pendingApplications);
+		}
+	}
+
+	onMount(() => {
+		console.log('Fetching pending applications...');
+		fetchPendingApplications();
+	});
 </script>
 
-
 <div class="dashboard-container">
-    <div class="dashboard-content">
-        <div class="welcome-section">
-            <h1>Welcome, {$user?.name || 'User'}</h1>
-            <p class="subtitle">Manage your account and applications</p>
-        </div>
+	<div class="dashboard-content">
+		<div class="welcome-section">
+			<h1>Welcome, {$user?.name || 'User'}</h1>
+			<p class="subtitle">Manage your account and applications</p>
+		</div>
 
-        <div class="dashboard-grid">
-            <div class="left-panel">
-                <section class="account-info panel">
-                    <h2>Account Information</h2>
-                    <div class="info-grid">
-                        <div class="info-item">
-                            <span class="label">Email</span>
-                            <span class="value">{$user?.email}</span>
-                        </div>
-                        <div class="info-item">
-                            <span class="label">Account Status</span>
-                            <span class="value status-active">Active</span>
-                        </div>
-                        <div class="info-item">
-                            <span class="label">Member Since</span>
-                            <span class="value">{new Date().toLocaleDateString()}</span>
-                        </div>
-                    </div>
-                </section>
+		<div class="dashboard-grid">
+			<div class="left-panel">
+				<section class="account-info panel">
+					<h2>Account Information</h2>
+					<div class="info-grid">
+						<div class="info-item">
+							<span class="label">Email</span>
+							<span class="value">{$user?.email}</span>
+						</div>
+						<div class="info-item">
+							<span class="label">Account Status</span>
+							<span class="value status-active">Active</span>
+						</div>
+						<div class="info-item">
+							<span class="label">Member Since</span>
+							<span class="value">{new Date().toLocaleDateString()}</span>
+						</div>
+					</div>
+				</section>
 
-                <section class="services panel">
-                    <h2>Services</h2>
-                    <button class="apply-button" on:click={applyForCreditCard}>
-                        <svg viewBox="0 0 24 24" width="24" height="24">
-                            <path fill="currentColor" d="M20 4H4c-1.11 0-1.99.89-1.99 2L2 18c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 14H4v-6h16v6zm0-10H4V6h16v2z"/>
-                        </svg>
-                        Apply for a Credit Card
-                    </button>
-                </section>
+				<section class="services panel">
+					<h2>Services</h2>
+					<button class="apply-button" on:click={applyForCreditCard}>
+						<svg viewBox="0 0 24 24" width="24" height="24">
+							<path
+								fill="currentColor"
+								d="M20 4H4c-1.11 0-1.99.89-1.99 2L2 18c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 14H4v-6h16v6zm0-10H4V6h16v2z"
+							/>
+						</svg>
+						Apply for a Credit Card
+					</button>
+				</section>
 
-                <section class="applications panel">
-                    <h2>Pending Applications</h2>
-                    <div class="applications-list">
-                        {#if applications.length === 0}
-                            <p class="no-applications">No pending applications</p>
+				<section class="applications panel">
+					<h2>Pending Applications</h2>
+					<div class="applications-list">
+						{#if applications.length === 0}
+    						<p class="no-applications">No pending applications</p>
                         {:else}
                             <div class="applications-scroll">
                                 <div class="application-cards">
@@ -99,9 +139,9 @@
                                 </div>
                             </div>
                         {/if}
-                    </div>
-                </section>
-            </div>
+					</div>
+				</section>
+			</div>
 
             <div class="right-panel">
                 <section class="quick-actions panel">
@@ -139,73 +179,73 @@
 </div>
 
 <style>
-    .dashboard-container {
-        padding-top: 5rem;
-        min-height: 100vh;
-        background-color: rgb(24 24 27);
-    }
+	.dashboard-container {
+		padding-top: 5rem;
+		min-height: 100vh;
+		background-color: rgb(24 24 27);
+	}
 
-    .dashboard-content {
-        max-width: 1200px;
-        margin: 0 auto;
-        padding: 2rem;
-    }
+	.dashboard-content {
+		max-width: 1200px;
+		margin: 0 auto;
+		padding: 2rem;
+	}
 
-    .welcome-section {
-        margin-bottom: 2rem;
-    }
+	.welcome-section {
+		margin-bottom: 2rem;
+	}
 
-    h1 {
-        color: white;
-        font-size: 2rem;
-        margin-bottom: 0.5rem;
-    }
+	h1 {
+		color: white;
+		font-size: 2rem;
+		margin-bottom: 0.5rem;
+	}
 
-    .subtitle {
-        color: rgb(161 161 170);
-    }
+	.subtitle {
+		color: rgb(161 161 170);
+	}
 
-    .dashboard-grid {
-        display: grid;
-        grid-template-columns: 2fr 1fr;
-        gap: 2rem;
-    }
+	.dashboard-grid {
+		display: grid;
+		grid-template-columns: 2fr 1fr;
+		gap: 2rem;
+	}
 
-    .panel {
-        background-color: rgb(39 39 42);
-        border-radius: 8px;
-        padding: 1.5rem;
-        margin-bottom: 1.5rem;
-    }
+	.panel {
+		background-color: rgb(39 39 42);
+		border-radius: 8px;
+		padding: 1.5rem;
+		margin-bottom: 1.5rem;
+	}
 
-    h2 {
-        color: white;
-        font-size: 1.25rem;
-        margin-bottom: 1rem;
-    }
+	h2 {
+		color: white;
+		font-size: 1.25rem;
+		margin-bottom: 1rem;
+	}
 
-    .info-grid {
-        display: grid;
-        gap: 1rem;
-    }
+	.info-grid {
+		display: grid;
+		gap: 1rem;
+	}
 
-    .info-item {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
+	.info-item {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+	}
 
-    .label {
-        color: rgb(161 161 170);
-    }
+	.label {
+		color: rgb(161 161 170);
+	}
 
-    .value {
-        color: white;
-    }
+	.value {
+		color: white;
+	}
 
-    .status-active {
-        color: #10B981;
-    }
+	.status-active {
+		color: #10b981;
+	}
 
     .apply-button {
         width: 100%;
@@ -305,25 +345,25 @@
         font-weight: 500;
     }
 
-    .actions-grid {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: 1rem;
-    }
+	.actions-grid {
+		display: grid;
+		grid-template-columns: repeat(2, 1fr);
+		gap: 1rem;
+	}
 
-    .action-button {
-        padding: 1rem;
-        background-color: rgb(63 63 70);
-        color: white;
-        border: none;
-        border-radius: 6px;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 0.5rem;
-        cursor: pointer;
-        transition: background-color 0.2s;
-    }
+	.action-button {
+		padding: 1rem;
+		background-color: rgb(63 63 70);
+		color: white;
+		border: none;
+		border-radius: 6px;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 0.5rem;
+		cursor: pointer;
+		transition: background-color 0.2s;
+	}
 
     .action-button:hover {
         background-color: rgb(82 82 91);
@@ -347,13 +387,37 @@
         background: rgb(82 82 91);
     }
 
-    @media (max-width: 768px) {
-        .dashboard-grid {
-            grid-template-columns: 1fr;
-        }
+	@media (max-width: 768px) {
+		.dashboard-grid {
+			grid-template-columns: 1fr;
+		}
 
-        .actions-grid {
-            grid-template-columns: 1fr;
-        }
-    }
+		.actions-grid {
+			grid-template-columns: 1fr;
+		}
+	}
+	.card {
+		width: 190px;
+		height: 254px;
+		background-image: linear-gradient(163deg, #00ff75 0%, #3700ff 100%);
+		border-radius: 20px;
+		transition: all 0.3s;
+	}
+
+	.card2 {
+		width: 190px;
+		height: 254px;
+		background-color: #1a1a1a;
+		border-radius: 15px;
+		transition: all 0.2s;
+	}
+
+	.card2:hover {
+		transform: scale(0.98);
+		border-radius: 20px;
+	}
+
+	.card:hover {
+		box-shadow: 0px 0px 30px 1px rgba(0, 255, 117, 0.3);
+	}
 </style>

@@ -405,11 +405,23 @@ def get_completed_apps():
     completed_apps_data = dumps(collection.find({ "$or": [ {"is_approved": True}, {"is_approved": False} ]}))
     return completed_apps_data
 
-# Applications for Specific User
+# All Applications for Specific User
 @app.get("/user-apps/{user_id}")
 def get_user_apps(user_id):
     user_apps_data = dumps(collection.find({"user_id": user_id}))
     return user_apps_data
+
+# Pending Applications for Specific User
+@app.get("/pending-user-apps/{user_id}")
+def get_pending_user_apps(user_id):
+    pending_user_apps_data = dumps(collection.find({"user_id": user_id, "is_approved": None}))
+    return pending_user_apps_data
+
+# Get Specific Application
+@app.get("/app/{app_id}")
+def get_app(app_id):
+    app_data = dumps(collection.find({"_id": app_id}))
+    return app_data
 
 # Endpoints for Nabil
 # Database: SwagAwesomeMoney, Collection: Customer (customer_collection)

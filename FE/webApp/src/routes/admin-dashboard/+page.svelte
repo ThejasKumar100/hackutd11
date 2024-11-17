@@ -1,6 +1,9 @@
 <script lang="ts">
     import Header from './Header.svelte';
     import { user } from '$lib/auth/auth-store';
+    //import { getAllApplications } from '+page.ts'; this is a function btw
+    // Need to have functionality like const [appData, setAppData] = useState();
+    // setAppData(getAllApplications())
     import { goto } from '$app/navigation';
     import { onMount } from 'svelte';
 
@@ -39,7 +42,7 @@
 
         <div class="dashboard-grid">
             <div class="left-panel">
-                <section class="account-info panel">
+                <!-- <section class="account-info panel">
                     <h2>Account Information</h2>
                     <div class="info-grid">
                         <div class="info-item">
@@ -55,6 +58,16 @@
                             <span class="value">{new Date().toLocaleDateString()}</span>
                         </div>
                     </div>
+                </section> -->
+
+                <section class="services panel">
+                    <h2>Services</h2>
+                    <button class="apply-button" on:click={applyForCreditCard}>
+                        <svg viewBox="0 0 24 24" width="24" height="24">
+                            <path fill="currentColor" d="M20 4H4c-1.11 0-1.99.89-1.99 2L2 18c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 14H4v-6h16v6zm0-10H4V6h16v2z"/>
+                        </svg>
+                        Apply for a Credit Card
+                    </button>
                 </section>
 
                 <section class="services panel">
@@ -93,7 +106,20 @@
                                     {/each}
                                 </div>
                             </div>
-                        {/if}
+
+                        <!-- {/if} -->
+
+
+                        <div class="card">
+                            <div class="card2">
+
+                                <div class="tileName"> <!-- First and Last name of the applicant -->
+                                    First Last
+                                </div>
+
+                            </div>
+                        </div>
+
                     </div>
                 </section>
             </div>
@@ -145,7 +171,16 @@
         border-radius: 4px;
     } */
 
-    
+    .tileName {
+        position: relative;
+        top: 15px;
+        left: 15px;
+        font-size: 20px;
+        font-family: "Playfair Display", serif;
+        color: white;
+        font-weight: 600;
+    }
+
     .dashboard-container {
         padding-top: 5rem;
         min-height: 100vh;
@@ -278,6 +313,34 @@
             grid-template-columns: 1fr;
         }
     }
+
+    /* ---------------------- Application Tiles */
+    .card {
+        width: 190px;
+        height: 254px;
+        background-image: linear-gradient(163deg, #00ff75 0%, #3700ff 100%);
+        border-radius: 20px;
+        transition: all .3s;
+    }
+
+    .card2 {
+        width: 190px;
+        height: 254px;
+        background-color: #1a1a1a;
+        border-radius: 15px;
+        transition: all .2s;
+    }
+
+    .card2:hover {
+        transform: scale(0.98);
+        border-radius: 20px;
+    }
+
+    .card:hover {
+        box-shadow: 0px 0px 30px 1px rgba(0, 255, 117, 0.30);
+    }
+
+
 
 
     .applications-scroll {
