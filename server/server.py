@@ -135,13 +135,15 @@ async def upload_images(files: List[UploadFile] = File(...), user_id: str = None
 
     # Save the result to the database (stubbed for now)
     # You can implement the database integration later here
-    # Example: save_to_database(response_data)
+    save_to_database(response_data)
 
     return response_data
 
 # Placeholder function to save data to the database
 def save_to_database(data: dict):
     # Example of saving to the database (PostgreSQL or MongoDB)
+    mongo_data = collection.insert_one(data)
+    print("MongoDB _id Inserted", mongo_data.inserted_id)
     pass
 
 if __name__ == "__main__":
