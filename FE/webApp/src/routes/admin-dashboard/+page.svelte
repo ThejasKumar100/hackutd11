@@ -1,6 +1,9 @@
 <script lang="ts">
     import Header from './Header.svelte';
     import { user, logout } from '$lib/auth/auth-store';
+    //import { getAllApplications } from '+page.ts'; this is a function btw
+    // Need to have functionality like const [appData, setAppData] = useState();
+    // setAppData(getAllApplications())
     import { goto } from '$app/navigation';
 
     async function handleLogout() {

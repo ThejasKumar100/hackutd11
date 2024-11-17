@@ -16,6 +16,26 @@ export const load: PageLoad = async () => {
     };
 };
 
+export const getAllApplications = async() => {
+    let uploadResponse: {status: string; message: string} | null = null;
+    // Send the request to the server
+    try {
+        const response = await fetch('http://localhost:8000/all-apps/', {
+            method: 'GET',
+        });
+
+        if (!response.ok) {
+            return `Error retrieving applications: ${await response.text()}`;
+        } else {
+            const responseData = await response.json();
+            console.log(responseData);
+            return responseData;
+        }
+    } catch (error) {
+        return `Error retrieving applications`;
+    }
+}
+
 // export const load: PageLoad = async () => {
 //     const currentUser = get(user);
 
