@@ -35,7 +35,7 @@
 
         <div class="dashboard-grid">
             <div class="left-panel">
-                <section class="account-info panel">
+                <!-- <section class="account-info panel">
                     <h2>Account Information</h2>
                     <div class="info-grid">
                         <div class="info-item">
@@ -51,7 +51,7 @@
                             <span class="value">{new Date().toLocaleDateString()}</span>
                         </div>
                     </div>
-                </section>
+                </section> -->
 
 
                 <section class="applications panel">
@@ -78,6 +78,11 @@
 
                         <div class="card">
                             <div class="card2">
+
+                                <div class="tileName"> <!-- First and Last name of the applicant -->
+                                    First Last
+                                </div>
+
                             </div>
                         </div>
 
@@ -132,7 +137,16 @@
         border-radius: 4px;
     } */
 
-    
+    .tileName {
+        position: relative;
+        top: 15px;
+        left: 15px;
+        font-size: 20px;
+        font-family: "Playfair Display", serif;
+        color: white;
+        font-weight: 600;
+    }
+
     .dashboard-container {
         padding-top: 5rem;
         min-height: 100vh;

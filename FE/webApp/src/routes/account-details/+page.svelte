@@ -22,7 +22,7 @@
     }
 </script>
 
-<Header />
+<Header title="Account Details" />
 
 <div class="account-container">
     <div class="account-content">
