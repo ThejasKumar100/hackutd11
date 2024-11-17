@@ -4,7 +4,9 @@ node_modules
 .output
 .vercel
 /.svelte-kit
+/FE/webApp/.svelte-kit
 /build
+/FE/webApp/build
 
 # OS
 .DS_Store
