@@ -9,6 +9,7 @@ import requests
 import uvicorn
 import os
 from openai import OpenAI
+from openai.types.chat.chat_completion import ChatCompletion
 from dotenv import load_dotenv
 import os
 import io
@@ -73,6 +74,81 @@ class ApplicationResponse(BaseModel):
     proposed_limit: int
     is_approved: bool = None
 
+@app.post("/upload-images/")
+async def upload_images(
+    files: List[UploadFile] = File(...),
+    user_id: str = Form(...)
+):
+    print(f"Received user_id: {user_id}, Number of files: {len(files)}")
+    
+    if not user_id:
+        raise HTTPException(status_code=400, detail="User ID is required")
+
+    processed_results = []
+    application_id = str(uuid.uuid4())  # Generate a unique application ID
+
+    try:
+        for file in files:
+            try:
+                # Validate file type
+                print(f"Processing file: {file.filename}, Content-Type: {file.content_type}")
+                if file.content_type not in ["image/jpeg", "image/png"]:
+                    raise HTTPException(status_code=400, detail=f"Unsupported file type: {file.content_type}")
+
+                # Read image bytes
+                image_bytes = await file.read()
+                print(f"Read {len(image_bytes)} bytes from file: {file.filename}")
+
+                # Extract text from the image
+                extracted_text = extract_text_from_image(image_bytes)
+                print(f"Extracted text from {file.filename}: {extracted_text[:100]}...")  # Log first 100 chars
+
+                # Send the extracted text to the LLM for validation and score generation
+                llm_result = validate_extracted_text_with_llm([extracted_text])
+                print(f"LLM result for {file.filename}: {llm_result}")
+
+                # Extract data from LLM response
+                images_data = llm_result.get("images", {})
+                image_key = list(images_data.keys())[0]  # Assuming single image per request
+                image_result = images_data[image_key]
+
+                processed_results.append({
+                    "filename": file.filename,
+                    "is_valid": image_result.get("is_valid"),
+                    "reason": image_result.get("reason", ""),
+                    "extracted_text": extracted_text
+                })
+
+            except Exception as e:
+                print(f"Error processing file {file.filename}: {e}")
+                processed_results.append({
+                    "filename": file.filename,
+                    "is_valid": False,
+                    "reason": f"Error: {str(e)}",
+                    "extracted_text": None
+                })
+
+        # After processing all images, prepare the final response
+        response_data = {
+            "application_id": application_id,
+            "user_id": user_id,
+            "images": processed_results,
+            "proposed_score": None,   # Update based on actual logic
+            "proposed_limit": None,  # Update based on actual logic
+            "is_approved": None  # Will be set by admin
+        }
+
+        # Save to database and retrieve the inserted document's _id
+        inserted_doc = save_to_database(response_data)
+        response_data["_id"] = str(inserted_doc["_id"])
+
+        return response_data
+
+    except Exception as e:
+        print(f"Unexpected error: {e}")
+        raise HTTPException(status_code=500, detail="An unexpected error occurred while processing the images.")
+
+
 
 def preprocess_image(image_bytes):
     # convert bytes to an OpenCV image
@@ -89,17 +165,16 @@ def preprocess_image(image_bytes):
 
 # Function to extract text from images using OpenCV and pytesseract
 def extract_text_from_image(image_bytes: bytes) -> str:
-    # preprocessed_image = preprocess_image(image_bytes)
-
-    # # Run OCR (Tesseract)
-    # extracted_text = pytesseract.image_to_string(preprocessed_image)
-    # return extracted_text
     nparr = np.frombuffer(image_bytes, np.uint8)
     img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-    # gray_img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    # preprocessed_img = cv2.threshold(gray_img, 127, 255, cv2.THRESH_BINARY)[1]
+    
+    # Extract text from image
     extracted_text = pytesseract.image_to_string(img)
-    return extracted_text
+
+    # Clean the extracted text: Join lines with a space to avoid multiple entries
+    cleaned_text = " ".join(extracted_text.splitlines())
+
+    return cleaned_text
 
 # Function to validate extracted text (using LLM validation)
 def validate_extracted_text_with_llm(extracted_texts: List[str]) -> dict:
@@ -114,23 +189,25 @@ def validate_extracted_text_with_llm(extracted_texts: List[str]) -> dict:
     instructions = (
         "You are an assistant validating and processing financial statements for a credit application. "
         "You will receive a list of texts, where each entry corresponds to financial details extracted from a single image. "
-        "Your task is to validate each entry individually and provide results in a JSON array format. "
-        "For each entry, return the following fields:\n"
-        "1. index (integer): The index of the text in the input list.\n"
-        "2. is_valid (boolean): Whether the text meets validation requirements.\n"
-        "3. reason (string): A short explanation if the text is invalid or additional context if valid.\n"
-        "4. proposed_score (integer): An estimated credit score between 300 and 850.\n"
-        "5. proposed_limit (integer): An estimated monthly credit limit in USD.\n\n"
-        "Return a JSON object with a key `results`, containing an array of validation results for all inputs."
+        "Your task is to validate each entry individually and return the results in the following JSON format:\n"
+        "The response should be an object with the following structure:\n"
+        "1. 'images' (object): An object where each key corresponds to an image identifier (e.g., 'image1', 'image2') and the value is an object containing:\n"
+        "    - 'data' (string): The picture embedded code (binary or encoded data).\n"
+        "    - 'is_valid' (boolean): Whether the extracted information from the image is valid.\n"
+        "    - 'reason' (string): A short explanation if the text is invalid or additional context if valid.\n"
+        "2. 'proposed_score' (integer): An estimated credit score between 300 and 850, calculated based only on the valid entries.\n"
+        "3. 'proposed_limit' (integer): An estimated monthly credit limit in USD, calculated based only on the valid entries.\n\n"
+        "Your output should be a single JSON object, containing:\n"
+        "- 'images': An object with the keys for each image and the associated validation data.\n"
+        "- 'proposed_score' and 'proposed_limit': Estimated values based on valid entries.\n"
+        "Your output should ONLY include the JSON structure described above. Do not include any Python code, explanations, or other text."
     )
 
-    # Send the request to the Sambanova API
+    # send the request to the Sambanova API
     sambaNovaClient = OpenAI(
         base_url="https://api.sambanova.ai/v1", 
         api_key=SAMBANOVA_API_KEY
     )
-    print("SambaNova Client: ", sambaNovaClient)
-    print("SambaNova API Key: ", SAMBANOVA_API_KEY)
 
     response = sambaNovaClient.chat.completions.create(
         model='Llama-3.2-11B-Vision-Instruct',
@@ -144,93 +221,68 @@ def validate_extracted_text_with_llm(extracted_texts: List[str]) -> dict:
 
     print(response.choices[0].message.content)
 
-    # Check if the response was successful
-    # if response.status_code != 200:
-    #     raise HTTPException(status_code=500, detail=f"Error communicating with Sambanova API: {response.text}")
-    # print("Completion: ", completion)
+    parsed_result = parse_llm_response(response)
 
-    # Parse the response
-    try:
-        result = response.json()
-        choices = result.get("choices", [])
-        if not choices:
-            raise HTTPException(status_code=500, detail="No valid choices found in the API response")
-        
-        response_content = choices[0].get("message", {}).get("content", "")
-        parsed_result = json.loads(response_content)  # Using json.loads for safety
-
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to parse LLM response: {str(e)}")
-
-    # Validate the response structure
-    if "results" not in parsed_result:
-        raise HTTPException(status_code=500, detail="LLM response missing expected 'results' field")
-
-    # Return the parsed results
     return parsed_result
 
-@app.post("/upload-images/")
-async def upload_images(
-    files: List[UploadFile] = File(...),
-    user_id: str = Form(...)
-):
-    print(f"Received user_id: {user_id}, Number of files: {len(files)}")
-    
-    if not user_id:
-        raise HTTPException(status_code=400, detail="User ID is required")
-
-    processed_results = []
-    application_id = str(uuid.uuid4())  # Generate a unique application ID
-
+def parse_llm_response(response):
     try:
-        for file in files:
-            # Validate file type
-            print(f"Processing file: {file.filename}, Content-Type: {file.content_type}")
-            if file.content_type not in ["image/jpeg", "image/png"]:
-                raise HTTPException(status_code=400, detail=f"Unsupported file type: {file.content_type}")
+        # Convert the ChatCompletion object to a dictionary if necessary
+        if hasattr(response, "to_dict"):
+            response = response.to_dict()
+            print("Converted ChatCompletion to dictionary")
 
-            try:
-                # Read image bytes
-                image_bytes = await file.read()
-                print(f"Read {len(image_bytes)} bytes from file: {file.filename}")
+        # Debug: Print the converted response
+        # print(f"Converted response: {response}")
 
-                # Extract text from the image
-                extracted_text = extract_text_from_image(image_bytes)
-                print(f"Extracted text from {file.filename}: {extracted_text[:100]}...")  # Log first 100 chars
+        # Check that the response contains `choices`
+        if "choices" not in response or not response["choices"]:
+            raise HTTPException(status_code=500, detail="Response is missing 'choices'")
 
-                # Send the extracted text to the LLM for validation and score generation
-                llm_result = validate_extracted_text_with_llm([extracted_text])
-                print(f"LLM result for {file.filename}: {llm_result}")
+        # Extract the `content` field from the first choice
+        content = response["choices"][0]["message"].get("content")
+        if not content:
+            raise HTTPException(status_code=500, detail="Response content is missing")
 
-                # Process the LLM response and format the output
-                processed_results.append({
-                    "filename": file.filename,
-                    "is_valid": llm_result["results"][0].get("is_valid"),
-                    "reason": llm_result["results"][0].get("reason", ""),
-                    "extracted_text": extracted_text
-                })
+        # Parse the `content` as JSON
+        try:
+            parsed_response = json.loads(content)
+            print(f"Parsed response content: {parsed_response}")
+        except json.JSONDecodeError as e:
+            raise HTTPException(status_code=500, detail=f"Invalid JSON in response content: {str(e)}")
 
-            except Exception as e:
-                print(f"Error processing file {file.filename}: {e}")
-                raise HTTPException(status_code=500, detail=f"Error processing file {file.filename}: {str(e)}")
+        # Check for 'images' key in the parsed response
+        if "images" not in parsed_response:
+            raise HTTPException(status_code=500, detail="Invalid response format: missing 'images' key")
 
-        # After processing all images, prepare the final response
-        response_data = {
-            "application_id": application_id,
-            "user_id": user_id,
-            "images": processed_results,
-            "proposed_score": llm_result["results"][0].get("proposed_score"),
-            "proposed_limit": llm_result["results"][0].get("proposed_limit"),
-            "is_approved": None  # Will be set by admin
-        }
+        images = parsed_response["images"]
+        print(f"Parsed images: {images}")
 
-        save_to_database(response_data)
+        # Validate that each image entry has the correct structure
+        for image_id, image_data in images.items():
+            if not isinstance(image_data, dict):
+                raise HTTPException(status_code=500, detail=f"Invalid structure for image {image_id}")
 
-        return response_data
+            # Ensure each image has the necessary fields
+            if 'data' not in image_data or 'is_valid' not in image_data or 'reason' not in image_data:
+                raise HTTPException(status_code=500, detail=f"Missing expected fields in {image_id} data")
+
+        # Ensure 'proposed_score' and 'proposed_limit' exist at the top level and handle null values
+        proposed_score = parsed_response.get('proposed_score')
+        proposed_limit = parsed_response.get('proposed_limit')
+
+        if proposed_score is not None and not isinstance(proposed_score, int):
+            raise HTTPException(status_code=500, detail="Invalid 'proposed_score' value")
+        if proposed_limit is not None and not isinstance(proposed_limit, int):
+            raise HTTPException(status_code=500, detail="Invalid 'proposed_limit' value")
+
+        return parsed_response
 
     except Exception as e:
-        print(f"Unexpected error: {e}")
-        raise HTTPException(status_code=500, detail="An unexpected error occurred while processing the images.")
+        print(f"Error processing LLM response: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error processing LLM response: {str(e)}")
+
+
 
 # Placeholder function to save data to the database
 def save_to_database(data: dict):
