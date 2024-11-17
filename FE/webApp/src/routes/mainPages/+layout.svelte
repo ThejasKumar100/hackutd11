@@ -10,11 +10,11 @@
 </script>
 
 <div class="section1" color="black">
-    <p>This is Test Text!</p>
+
 </div>
 
 <div class="section2" color="black">
-    <p>This is Test Text!</p>
+
 </div>
 
 
@@ -35,13 +35,14 @@
         justify-content: center;
         min-height: 100vh; */
         gap: 1rem;
+        border-radius: 9vh;
         color: white;
     }
 
     .section2 {
 
         position: relative;
-        top: -77vh;
+        top: -75vh;
         left: 39vw;
         background-color: #f1f1f1;
         width: 59vw;
@@ -53,6 +54,7 @@
         justify-content: center;
         min-height: 100vh; */
         gap: 1rem;
+        border-radius: 9vh;
         color: white;
     }
 
