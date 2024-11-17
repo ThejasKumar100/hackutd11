@@ -1,15 +1,12 @@
 <script lang="ts">
     import Header from '../user-dashboard/Header.svelte';
     import { goto } from '$app/navigation';
-
-    interface FileState {
-        idDocument: File | null;
-        proofOfIncome: File | null;
-    }
+    import { user } from '$lib/auth/auth-store';
+    import type { FileState } from '$lib/types/file-types';
 
     let files: FileState = {
         idDocument: null,
-        proofOfIncome: null,
+        proofOfIncome: null
     };
 
     function handleFileChange(event: Event, documentType: keyof FileState): void {
@@ -20,8 +17,30 @@
     }
 
     async function handleSubmit(): Promise<void> {
-        console.log('Submitting files:', files);
-        goto('/user-dashboard');
+        if (!$user?.email) return;
+
+        try {
+            const response = await fetch('/api/applications', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    userId: $user.sub,
+                    email: $user.email,
+                    status: 'pending',
+                    documents: {
+                        idDocument: files.idDocument?.name || '',
+                        proofOfIncome: files.proofOfIncome?.name || ''
+                    }
+                })
+            });
+
+            if (!response.ok) throw new Error('Failed to submit application');
+            goto('/user-dashboard');
+        } catch (error) {
+            console.error('Failed to submit application:', error);
+        }
     }
 
     function handleCancel(): void {
@@ -237,4 +256,4 @@
             padding: 0.75rem 1.25rem;
         }
     }
-</style>
+</style>    

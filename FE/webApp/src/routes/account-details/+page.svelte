@@ -1,26 +1,25 @@
 <script lang="ts">
     import Header from '../user-dashboard/Header.svelte';
     import { goto } from '$app/navigation';
+    import { user } from '$lib/auth/auth-store';
 
-    let user = {
-        name: "Jose Pablo",
-        email: "email@example.com",
-        phone: "",
-        address: ""
+    let userInfo = {
+        name: $user?.name || '',
+        email: $user?.email || '',
+        phone: '',
+        address: ''
     };
 
-    function handleSave() {
-        console.log('Saving user details:', user);
+    function handleSave(event: Event) {
+        event.preventDefault();
+        // Here you would typically save the data to your backend
+        console.log('Saving user info:', userInfo);
+        goto('/user-dashboard');
     }
 
     function handleCancel() {
         goto('/user-dashboard');
     }
-
-    function saveChanges() {
-        goto('/user-dashboard');
-    }
-
 </script>
 
 <Header />
@@ -36,67 +35,42 @@
             <div class="form-panel">
                 <div class="form-group">
                     <label for="name">Full Name</label>
-                    <input type="text" id="name" value={user.name} readonly>
+                    <input 
+                        type="text" 
+                        id="name" 
+                        bind:value={userInfo.name}
+                        readonly
+                    >
                 </div>
 
                 <div class="form-group">
                     <label for="email">Email Address</label>
-                    <input type="email" id="email" value={user.email} readonly>
+                    <input 
+                        type="email" 
+                        id="email" 
+                        bind:value={userInfo.email}
+                        readonly
+                    >
                 </div>
 
                 <div class="form-group">
                     <label for="phone">Phone Number</label>
-                    <input type="tel" id="phone" bind:value={user.phone}>
+                    <input 
+                        type="tel" 
+                        id="phone" 
+                        bind:value={userInfo.phone}
+                        required
+                    >
                 </div>
 
                 <div class="form-group">
                     <label for="address">Address</label>
-                    <input type="text" id="address" bind:value={user.address}>
-                </div>
-            </div>
-
-            <div class="button-group">
-                <button type="button" class="cancel-button" on:click={handleCancel}>
-                    Cancel
-                </button>
-                <button type="submit" class="save-button" on:click={saveChanges}>
-                    Save Changes
-                </button>
-            </div>
-        </form>
-    </div>
-</div>
-
-<Header />
-
-<div class="account-container">
-    <div class="account-content">
-        <div class="account-header">
-            <h1>Account Details</h1>
-            <p class="subtitle">Review and update your personal information</p>
-        </div>
-
-        <form class="account-form" on:submit|preventDefault={handleSave}>
-            <div class="form-panel">
-                <div class="form-group">
-                    <label for="name">Full Name</label>
-                    <input type="text" id="name" bind:value={user.name} required>
-                    
-                </div>
-
-                <div class="form-group">
-                    <label for="email">Email Address</label>
-                    <input type="email" id="email" bind:value={user.email} required>
-                </div>
-
-                <div class="form-group">
-                    <label for="phone">Phone Number</label>
-                    <input type="tel" id="phone" bind:value={user.phone}>
-                </div>
-
-                <div class="form-group">
-                    <label for="address">Address</label>
-                    <input type="text" id="address" bind:value={user.address}>
+                    <input 
+                        type="text" 
+                        id="address" 
+                        bind:value={userInfo.address}
+                        required
+                    >
                 </div>
             </div>
 
@@ -111,6 +85,8 @@
         </form>
     </div>
 </div>
+
+
 
 <style>
     .account-container {
