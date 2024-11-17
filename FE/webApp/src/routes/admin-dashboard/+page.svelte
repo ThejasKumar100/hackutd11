@@ -1,30 +1,33 @@
 <script lang="ts">
     import { user, logout } from '$lib/auth/auth-store';
+    import { goto } from '$app/navigation';
+
+    async function handleLogout() {
+        await logout();
+        goto('/');
+    }
 </script>
 
 <div class="admin-dashboard">
     <h1>Admin Dashboard</h1>
     {#if $user}
-        <p>Welcome, Admin {$user.name}</p>
-        <div class="admin-controls">
-            <h2>Admin Controls</h2>
-            <!-- Add your admin-specific controls here -->
+        <div class="user-info">
+            <p>Welcome, Admin {$user.name}</p>
+            <p>Email: {$user.email}</p>
+            <p>Role: {$user.role}</p>
         </div>
+        <button on:click={handleLogout}>Logout</button>
     {/if}
-    <button on:click={logout}>Logout</button>
 </div>
 
 <style>
     .admin-dashboard {
         padding: 2rem;
-        max-width: 1200px;
-        margin: 0 auto;
     }
-
-    .admin-controls {
-        margin-top: 2rem;
+    .user-info {
+        margin: 1rem 0;
         padding: 1rem;
-        border: 1px solid #ccc;
+        background: #f5f5f5;
         border-radius: 4px;
     }
 </style>
