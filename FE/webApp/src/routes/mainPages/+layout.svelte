@@ -35,7 +35,7 @@
         justify-content: center;
         min-height: 100vh; */
         gap: 1rem;
-        border-radius: 9vh;
+        border-radius: 4vh;
         color: white;
     }
 
@@ -54,7 +54,7 @@
         justify-content: center;
         min-height: 100vh; */
         gap: 1rem;
-        border-radius: 9vh;
+        border-radius: 4vh;
         color: white;
     }
 
