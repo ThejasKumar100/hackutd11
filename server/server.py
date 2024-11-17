@@ -26,37 +26,40 @@ db = client["SwagAwesomeMoney"]
 collection = db["Baller"]
 
 # Testing Database
+def test_database():
+    # Initial Query Test Data
+    print("Initial data below if any")
+    results = collection.find({})
+    for document in results:
+        print("initial document", document)
 
-# Initial Query Test Data
-print("Initial data below if any")
-results = collection.find({})
-for document in results:
-    print("initial document", document)
+    # Insert Test Data
+    testing_data = {"name": "Emily", "group": "capybara"}
+    testing_insert = collection.insert_one(testing_data)
+    print("Testing Insert Object", testing_insert)
+    print("Testing Insert _id", testing_insert.inserted_id)
 
-# Insert Test Data
-testing_data = {"name": "Emily", "group": "capybara"}
-testing_insert = collection.insert_one(testing_data)
-print("Testing Insert Object", testing_insert)
-print("Testing Insert _id", testing_insert.inserted_id)
+    # Query Test Data
+    results = collection.find({"name": "Emily", "group": "capybara"})
+    for document in results:
+        print("added document", document)
 
-# Query Test Data
-results = collection.find({"name": "Emily", "group": "capybara"})
-for document in results:
-    print("added document", document)
+    # Remove Test Data
+    collection.delete_many({"name": "Emily", "group": "capybara"})
 
-# Remove Test Data
-collection.delete_many({"name": "Emily", "group": "capybara"})
+    # Query Test Data to Check Removal
+    test_removal_flag = True
+    results = collection.find({"name": "Emily", "group": "capybara"})
+    for document in results:
+        print("remaining document", document)
+        test_removal_flag = False
+    if test_removal_flag:
+        print("Document successfully removed.")
+    else:
+        print("ERROR: Document not removed.")
 
-# Query Test Data to Check Removal
-test_removal_flag = True
-results = collection.find({"name": "Emily", "group": "capybara"})
-for document in results:
-    print("remaining document", document)
-    test_removal_flag = False
-if test_removal_flag:
-    print("Document successfully removed.")
-else:
-    print("ERROR: Document not removed.")
+# Comment Out If Needed
+test_database()
 
 # Define the LLM response model for type checking
 class ApplicationResponse(BaseModel):
