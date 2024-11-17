@@ -98,7 +98,7 @@
 
 
 <style>
-    .admin-dashboard {
+    /* .admin-dashboard {
         padding: 2rem;
     }
     .user-info {
@@ -106,7 +106,7 @@
         padding: 1rem;
         background: #000000;
         border-radius: 4px;
-    }
+    } */
 
     
     .dashboard-container {
@@ -177,7 +177,7 @@
         color: #10B981;
     }
 
-    .apply-button {
+    /* .apply-button {
         width: 100%;
         padding: 1rem;
         background-color: #2563EB;
@@ -190,11 +190,11 @@
         gap: 0.5rem;
         cursor: pointer;
         transition: background-color 0.2s;
-    }
+    } */
 
-    .apply-button:hover {
+    /* .apply-button:hover {
         background-color: #1D4ED8;
-    }
+    } */
 
     .no-applications {
         color: rgb(161 161 170);

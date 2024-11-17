@@ -27,13 +27,13 @@
 
 <slot />
 
-<div class="section1" color="black">
+<!-- <div class="section1" color="black">
 
 </div>
 
 <div class="section2" color="black">
 
-</div>
+</div> -->
 
 
 <style>
