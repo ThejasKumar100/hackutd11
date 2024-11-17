@@ -10,11 +10,53 @@ import uvicorn
 import os
 import openai
 from dotenv import load_dotenv
+import os
+from pymongo import MongoClient
 
 app = FastAPI()
 
 # SAMBANOVA_API_KEY = os.environ.get("SAMBANOVA_API_KEY")
 SAMBANOVA_API_KEY = load_dotenv()
+
+# MongoDB Database Setup
+load_dotenv()
+mongo_cluster_connection_string = os.getenv("MONGO_CLUSTER_CONNECTION_STRING")
+client = MongoClient(mongo_cluster_connection_string)
+db = client["SwagAwesomeMoney"]
+collection = db["Baller"]
+
+# Testing Database
+
+# Initial Query Test Data
+print("Initial data below if any")
+results = collection.find({})
+for document in results:
+    print("initial document", document)
+
+# Insert Test Data
+testing_data = {"name": "Emily", "group": "capybara"}
+testing_insert = collection.insert_one(testing_data)
+print("Testing Insert Object", testing_insert)
+print("Testing Insert _id", testing_insert.inserted_id)
+
+# Query Test Data
+results = collection.find({"name": "Emily", "group": "capybara"})
+for document in results:
+    print("added document", document)
+
+# Remove Test Data
+collection.delete_many({"name": "Emily", "group": "capybara"})
+
+# Query Test Data to Check Removal
+test_removal_flag = True
+results = collection.find({"name": "Emily", "group": "capybara"})
+for document in results:
+    print("remaining document", document)
+    test_removal_flag = False
+if test_removal_flag:
+    print("Document successfully removed.")
+else:
+    print("ERROR: Document not removed.")
 
 # Define the LLM response model for type checking
 class ApplicationResponse(BaseModel):
@@ -151,8 +193,8 @@ async def upload_images(
             "is_approved": None  # Will be set by admin
         }
 
-        # Log the final response
-        print(f"Final response data: {response_data}")
+        save_to_database(response_data)
+
         return response_data
 
     except Exception as e:
@@ -162,6 +204,8 @@ async def upload_images(
 # Placeholder function to save data to the database
 def save_to_database(data: dict):
     # Example of saving to the database (PostgreSQL or MongoDB)
+    mongo_data = collection.insert_one(data)
+    print("MongoDB _id Inserted", mongo_data.inserted_id)
     pass
 
 if __name__ == "__main__":
