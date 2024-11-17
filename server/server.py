@@ -1,4 +1,5 @@
 import base64
+import datetime
 from fastapi import FastAPI, Form, HTTPException, File, UploadFile
 from typing import List, Tuple
 from pydantic import BaseModel
@@ -80,7 +81,7 @@ class ApplicationResponse(BaseModel):
 
 @app.post("/upload-images/")
 async def upload_images(
-    files: List[UploadFile] = File(...), # a list of pictures uploaded from the user
+    files: List[UploadFile] = File(...),  # a list of pictures uploaded from the user
     user_id: str = Form(...),
 ):
     print(f"Received user_id: {user_id}, Number of files: {len(files)}")
@@ -90,21 +91,37 @@ async def upload_images(
 
     try:
         # Process images
-        processed_results, extracted_texts = await process_images(files) # results and corresponding text returned separately since the text is needed for LLM validation
+        processed_results, extracted_texts = await process_images(files)  # results and corresponding text returned separately since the text is needed for LLM validation
 
         # After extracting all texts, validate them in a single call
         llm_results = validate_images_with_llm(extracted_texts)
 
         # Assign the validation results to the corresponding files
         for idx, result in enumerate(processed_results):
-            if result["extracted_text"]: # if we have extracted text, the we can assign the validation results
+            if result["extracted_text"]:  # if we have extracted text, then we can assign the validation results
                 validation = llm_results[idx]
-                result["is_valid"] = validation["is_valid"]
-                result["reason"] = validation["reason"]
+                
+                # Log the raw LLM response for debugging
+                print(f"LLM validation response for file {result['filename']}: {validation}")
+                
+                # Ensure the response contains 'is_valid' and 'reason' keys
+                # Ensure the response contains 'is_valid' and 'reason' keys
+        if "is_valid" in validation and "reason" in validation:
+            result["is_valid"] = validation["is_valid"]
+            result["reason"] = validation["reason"]
+            result["data"] = validation["data"]  # Ensure `data` is properly assigned
+        else:
+            # Handle the case where LLM response is not as expected
+            result["is_valid"] = False
+            result["reason"] = "LLM response format is incorrect or missing necessary fields."
+            result["data"] = None  # Ensure `data` is set to `None` in case of error
+            print(f"Error: Missing expected keys in LLM response for {result['filename']}")
 
         # After processing all images, calculate proposed score and limit
-        valid_images = [result for result in processed_results if result["is_valid"]]
+        valid_images = [result for result in processed_results if result and result.get("is_valid")]
+
         proposed_score, proposed_limit = calculate_proposed_credit(valid_images)
+        print(f"Proposed credit score: {proposed_score}, Proposed credit limit: {proposed_limit}")
 
         # Prepare the final response
         response_data = {
@@ -112,12 +129,12 @@ async def upload_images(
             "images": processed_results,
             "proposed_score": proposed_score,
             "proposed_limit": proposed_limit,
-            "is_approved": None  # Will be set by admin
+            "is_approved": None,  # Will be set by admin
+            "submitted_at": datetime.datetime.now()
         }
 
-        # Save to database and retrieve the inserted document's _id
-        # inserted_doc = save_to_database(response_data)
-        # response_data["_id"] = str(inserted_doc["_id"])
+        print("Saving to database...")
+        save_to_database(response_data)
 
         if valid_images:
             # If at least one valid image, we confirm submission was successful
@@ -128,7 +145,7 @@ async def upload_images(
 
     except Exception as e:
         print(f"Unexpected error: {e}")
-        raise HTTPException(status_code=500, detail="An unexpected error occurred while processing the images.")
+        raise HTTPException(status_code=500, detail="An unexpected error occurred while processing the images, please try again with new images.")
 
 
 async def process_images(files: List[UploadFile]) -> Tuple[List[dict], List[str]]:
@@ -220,8 +237,9 @@ def validate_images_with_llm(extracted_texts: List[str]) -> List[dict]:
         "For this particular financial statement, ensure it meets these criteria: 1) All mandatory fields are present (e.g., date, amount). "
         "2) Numerical values are within reasonable ranges. 3) The format matches standard financial documents. "
         "When validating, consider the possibility of fraudulent or inaccurate data, and provide a reason for rejection."
+        "However, note that the data format may be given the benefit of the doubt, as the text is extracted from images and thus does not line up perfectly."
         "Return a JSON object with 'is_valid' (boolean), 'reason' (string), and any additional metadata."
-        "Return only the JSON object, do not include code, text, or any other information."
+        "Return only the JSON object, do not include code, text, or any other information, do not use markdown."
     )
 
     validated_images = []
@@ -238,19 +256,8 @@ def validate_images_with_llm(extracted_texts: List[str]) -> List[dict]:
             # Log the raw response for debugging
             print(f"Raw response from LLM API: {response}")
             
-            # Check if the response contains 'choices' and has valid content
-            if "choices" not in response or not response["choices"]:
-                raise HTTPException(status_code=500, detail="API response missing 'choices' field")
-
-            content = response.choices[0].message.get("content") # where the response content is stored
-            if not content:
-                raise HTTPException(status_code=500, detail="Response content is missing")
-
-            try:
-                parsed_response = json.loads(content)
-                print(f"Parsed response content: {parsed_response}")
-            except json.JSONDecodeError as e:
-                raise HTTPException(status_code=500, detail=f"Invalid JSON in response content: {str(e)}")
+            # Parse and clean the LLM response
+            parsed_response = parse_llm_response(response)
 
             validated_images.append({
                 "is_valid": parsed_response.get("is_valid", False),
@@ -272,10 +279,10 @@ def validate_images_with_llm(extracted_texts: List[str]) -> List[dict]:
 
 def parse_llm_response(response):
     try:
-        # Convert the ChatCompletion object to a dictionary if necessary
+        # Convert the ChatCompletion object to a dictionary if it's not already
         if hasattr(response, "to_dict"):
             response = response.to_dict()
-            print("Converted ChatCompletion to dictionary")
+            # print("Converted ChatCompletion to dictionary")
 
         # Debug: Print the converted response
         # print(f"Converted response: {response}")
@@ -284,48 +291,33 @@ def parse_llm_response(response):
         if "choices" not in response or not response["choices"]:
             raise HTTPException(status_code=500, detail="Response is missing 'choices'")
 
-        # Extract the `content` field from the first choice
+        # Extract the content field from the first choice
         content = response["choices"][0]["message"].get("content")
         if not content:
             raise HTTPException(status_code=500, detail="Response content is missing")
 
-        # Parse the `content` as JSON
+        # Clean the markdown formatting if present (assuming it's in JSON markdown format)
+        if content.startswith('```json\n'):
+            content = content[len('```json\n'):].strip()  # Strip the opening markdown block
+        if content.endswith('```'):
+            content = content[:-3].strip()  # Strip the closing markdown block
+
+        # Parse the content as JSON
         try:
             parsed_response = json.loads(content)
             print(f"Parsed response content: {parsed_response}")
         except json.JSONDecodeError as e:
             raise HTTPException(status_code=500, detail=f"Invalid JSON in response content: {str(e)}")
 
-        # Check for 'images' key in the parsed response
-        if "images" not in parsed_response:
-            raise HTTPException(status_code=500, detail="Invalid response format: missing 'images' key")
-
-        images = parsed_response["images"]
-        print(f"Parsed images: {images}")
-
-        # Validate that each image entry has the correct structure
-        for image_id, image_data in images.items():
-            if not isinstance(image_data, dict):
-                raise HTTPException(status_code=500, detail=f"Invalid structure for image {image_id}")
-
-            # Ensure each image has the necessary fields
-            if 'data' not in image_data or 'is_valid' not in image_data or 'reason' not in image_data:
-                raise HTTPException(status_code=500, detail=f"Missing expected fields in {image_id} data")
-
-        # Ensure 'proposed_score' and 'proposed_limit' exist at the top level and handle null values
-        proposed_score = parsed_response.get('proposed_score')
-        proposed_limit = parsed_response.get('proposed_limit')
-
-        if proposed_score is not None and not isinstance(proposed_score, int):
-            raise HTTPException(status_code=500, detail="Invalid 'proposed_score' value")
-        if proposed_limit is not None and not isinstance(proposed_limit, int):
-            raise HTTPException(status_code=500, detail="Invalid 'proposed_limit' value")
+        # Check for the necessary fields in the parsed response (for validation)
+        if "is_valid" not in parsed_response or "reason" not in parsed_response:
+            raise HTTPException(status_code=500, detail="Invalid response format: missing 'is_valid' or 'reason'")
 
         return parsed_response
 
     except Exception as e:
-        print(f"Error processing LLM response: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Error processing LLM response: {str(e)}")
+        print(f"Error during LLM response parsing: {e}")
+        raise HTTPException(status_code=500, detail=f"Error during LLM response parsing: {str(e)}")
 
 def calculate_proposed_credit(validated_images: List[dict]) -> dict:
     """
@@ -344,9 +336,9 @@ def calculate_proposed_credit(validated_images: List[dict]) -> dict:
         "You are tasked with determining a proposed credit score and limit based on valid financial data entries. "
         "Analyze the data and return a JSON object with 'proposed_score' and 'proposed_limit'."
         "The proposed score should be an integer between 300 and 850, representing your estimation for the user's credit score."
-        "The proposed limit should be an integer representing your estimation for the user's monthly credit limit."
+        "The proposed limit should be an integer representing your estimation for the user's monthly credit limit, minimum 1000."
         "For additional context, the user does not have any existing credit history, and is an individual with limited access to traditional banks."
-        "Return only the JSON object, do not include code, text, or any other information."
+        "Return only the JSON object, do not include code, text, or any other information, do not use markdown."
     )
 
     response = SAMBANOVA_CLIENT.chat.completions.create(
@@ -360,10 +352,8 @@ def calculate_proposed_credit(validated_images: List[dict]) -> dict:
     )
 
     content = json.loads(response.choices[0].message.content)
-    return {
-        "proposed_score": content.get("proposed_score", 0),
-        "proposed_limit": content.get("proposed_limit", 0)
-    }
+
+    return content.get("proposed_score", 0), content.get("proposed_limit", 0)
 
 
 # Placeholder function to save data to the database
