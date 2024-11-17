@@ -5,7 +5,9 @@ node_modules
 .vercel
 /FE/webApp/.svelte-kit
 /.svelte-kit
+/FE/webApp/.svelte-kit
 /build
+/FE/webApp/build
 
 # OS
 .DS_Store
@@ -13,6 +15,7 @@ Thumbs.db
 
 # Env
 .env
+/server/.env
 .env.*
 !.env.example
 !.env.test
