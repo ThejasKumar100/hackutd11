@@ -97,26 +97,6 @@ async def upload_images(
         # After extracting all texts, validate them in a single call
         llm_results = validate_images_with_llm(processed_results)
 
-        # # Assign the validation results to the corresponding files
-        # for idx, result in enumerate(processed_results):
-        #     if result["extracted_text"]:  # if we have extracted text, then we can assign the validation results
-        #         validation = llm_results[idx]
-                
-        #         # Log the raw LLM response for debugging
-        #         print(f"LLM validation response for file {result['filename']}: {validation}")
-                
-        #         # Ensure the response contains 'is_valid' and 'reason' keys
-        # if "is_valid" in validation and "reason" in validation:
-        #     result["is_valid"] = validation["is_valid"]
-        #     result["reason"] = validation["reason"]
-        #     result["data"] = validation["data"]  # Ensure `data` is properly assigned
-        # else:
-        #     # Handle the case where LLM response is not as expected
-        #     result["is_valid"] = False
-        #     result["reason"] = "LLM response format is incorrect or missing necessary fields."
-        #     result["data"] = None  # Ensure `data` is set to `None` in case of error
-        #     print(f"Error: Missing expected keys in LLM response for {result['filename']}")
-
         # After processing all images, calculate proposed score and limit
         valid_images = [result for result in llm_results if result and result.get("is_valid")]
 
