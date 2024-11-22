@@ -2,6 +2,8 @@
 
 This project is a web application designed to assist with credit and loan applications for customers with a lack of reportable credit history and/or income while tackling the Goldman Sachs and SambdaNova challenges at HackUTD XI
 
+Check out our [devpost](https://devpost.com/software/bankstep?ref_content=my-projects-tab&ref_feature=my_projects) to see the demo video!
+
 ## Background
 
 ### Problem
